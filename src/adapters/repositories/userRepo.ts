@@ -23,7 +23,11 @@ export default class UserRepo implements IUserRepo {
 
     async createUser(registerData: IRegisterCredentials): Promise<void> {
         try {
-            const newUser = new this.userCollection(registerData);
+            const newUser = new this.userCollection({
+                fullName: registerData.fullName,
+                email: registerData.email,
+                password: registerData.password
+            });
             await newUser.save();
         } catch (err: any) {
             throw err;
@@ -32,26 +36,47 @@ export default class UserRepo implements IUserRepo {
 
     async createOtp(email: string, otp: string): Promise<void | never> {
         try {
-            await this.deleteOTPByEmail(email); // delete previous otp if exisits
+            await this.deleteOtpByEmail(email); // delete previous otp if exisits
 
-            const newOTP: IOtpDocument = new this.otpCollection({
+            const newOtp: IOtpDocument = new this.otpCollection({
                 email: email,
                 otp: otp,
                 expiresAt: new Date(Date.now() + 90000)
             });
 
-            await newOTP.save();
+            await newOtp.save();
         } catch (err: any) {
             throw err;
         }
     }
 
-    private async deleteOTPByEmail(email: string): Promise<void | never> {
+    async getOtpByEmail(email: string | undefined): Promise<IOtpDocument | null | never> {
         try {
-            await this.otpCollection.deleteMany({email});
+            return await this.otpCollection.findOne({ email, expiresAt: { $gte: new Date() } }).sort({ expiresAt: -1 });
         } catch (err: any) {
             throw err;
         }
+    }
+
+    async makeUserVerified(email: string): Promise<void | never> {
+        try {
+            await this.deleteOtpByEmail(email); // delete the otp document of this email.
+            await this.userCollection.updateOne({ email }, { $set: { otp_verification: true } });
+        } catch (err: any) {
+            throw err;
+        }
+    }
+
+    private async deleteOtpByEmail(email: string): Promise<void | never> {
+        try {
+            await this.otpCollection.deleteMany({ email });
+        } catch (err: any) {
+            throw err;
+        }
+    }
+
+    async getUserInfo(userId: string): Promise<IUserDocument | null> {
+        return await this.userCollection.findById(userId)
     }
 
 }

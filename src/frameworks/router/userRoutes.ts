@@ -26,6 +26,7 @@ import Users from '../models/userSchema';
 import Otp from '../models/otpSchema';
 import IJwtService from '../../interface/utils/IJwtServices';
 import JwtService from '../utils/jwtService.utils';
+import authenticateJwt from '../middleware/authMiddleware';
 
 const userRouter = express.Router();
 
@@ -37,7 +38,6 @@ const jwtService:IJwtService=new JwtService()
 const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService,emailService,otpService);
 const userController: IUserController = new UserController(userUseCase);
 
-
 userRouter.post('/register', userController.handleRegister.bind(userController));
 
 userRouter.post('/otpVerify', userController.handleOtpVerification.bind(userController));
@@ -48,5 +48,6 @@ userRouter.post('/login', userController.handleLogin.bind(userController));
 
 userRouter.post('/logout', userController.handleLogout.bind(userController));
 
+userRouter.get('/getUser', authenticateJwt, userController.getUserInfo.bind(userController));
 
 export default userRouter;  

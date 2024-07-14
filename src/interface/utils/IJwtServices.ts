@@ -1,11 +1,11 @@
 import { ObjectId } from "mongoose";
 
 export interface IPayload {
-    id: ObjectId,
+    id: string,
     type: string
 }
 
 export default interface IJwtService {
-    sign(payload: IPayload): string | never;
-    verifyToken(token: string): IPayload | never;
+    sign(payload: IPayload): string;
+    verifyToken(token: string): IPayload;
 }

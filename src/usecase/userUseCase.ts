@@ -2,12 +2,14 @@ import { IUserDocument } from "../interface/collections/IUsers.collection";
 import { IRegisterCredentials } from "../interface/controllers/IUserController";
 import IUserRepo from "../interface/repositories/IUserRepo";
 import IUserUseCase from "../interface/usecase/IUserUseCase";
-import bcrypt from 'bcrypt';
 import IHashingService from "../interface/utils/IHashingService";
 import IOtpService from "../interface/utils/IOtpService";
 import IEmailService from "../interface/utils/IEmailService";
 import IJwtService, { IPayload } from "../interface/utils/IJwtServices";
-
+import authenticationError from "../errors/authenticationError"
+import { StatusCodes } from "../enums/statusCode.enums";
+import { IOtpDocument } from "../interface/collections/IOtp.collections";
+import jwtTokenError from "../errors/jwtError"
 
 export default class UserUseCase implements IUserUseCase {
     private userRepo: IUserRepo
@@ -19,40 +21,18 @@ export default class UserUseCase implements IUserUseCase {
     constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService) {
         this.userRepo = userRepo
         this.hashingService = hashingService
-        this.jwtService=jwtService
+        this.jwtService = jwtService
         this.otpService = otpService
         this.emailService = emailService
     }
 
-    async authenticateUser(email: string, password: string): Promise<string | never> {
-        try {
-            const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
-
-            if (!userData) {
-                throw new Error('The provided email address is not found.');
-            } else if (!await this.hashingService.compare(password, userData.password as string)) {
-                throw new Error('The provided password is incorrect.');
-            } else if (!userData.otp_verification) {
-                await this.generateAndSendOTP(userData.email as string); // send otp via email.
-                throw new Error('Account is not verified.');
-            }
-            const payload: IPayload = {
-                id: userData._id,
-                type: 'User'
-            }
-            const token: string = this.jwtService.sign(payload);
-
-            return token;
-        } catch (err: any) {
-            throw err;
-        }
-    }
-
+    //REGISTER
     async registerUser(registerData: IRegisterCredentials): Promise<void> {
         try {
-            const user = await this.userRepo.getDataByEmail(registerData.email);
+            const user: IUserDocument | null = await this.userRepo.getDataByEmail(registerData.email);
             if (user) {
-                throw new Error('User already exists')
+                console.log('user already exist');
+                throw new authenticationError({ message: 'The email address you entered is already registered.', statusCode: StatusCodes.BadRequest, errorField: 'email' });
             }
 
             const hashedPassword: string = await this.hashingService.hash(registerData.password);
@@ -63,6 +43,33 @@ export default class UserUseCase implements IUserUseCase {
             await this.generateAndSendOTP(registerData.email);
         } catch (err: any) {
             throw err
+        }
+    }
+
+    //LOGIN
+    async authenticateUser(email: string, password: string): Promise<string | never> {
+        try { 
+            const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
+            console.log('userdata in userusecase authenticate user', userData);
+
+            if (!userData) {
+                throw new authenticationError({ message: 'The provided email address is not found.', statusCode: StatusCodes.Unauthorized, errorField: 'email' });
+            } else if (!await this.hashingService.compare(password, userData.password as string)) {
+                throw new authenticationError({ message: 'The provided password is incorrect.', statusCode: StatusCodes.Unauthorized, errorField: 'password' })
+            } else if (!userData.otp_verification) {
+                await this.generateAndSendOTP(userData.email as string); // send otp via email.
+                throw new authenticationError({ message: 'Account is not verified.', statusCode: StatusCodes.Unauthorized, errorField: "otp", notOtpVerifiedError: userData.email as string });
+            }
+
+            const payload: IPayload = {
+                id: userData._id,
+                type: 'User'
+            }
+            const token: string = this.jwtService.sign(payload);
+
+            return token;
+        } catch (err: any) {
+            throw err;
         }
     }
 
@@ -77,24 +84,75 @@ export default class UserUseCase implements IUserUseCase {
 
             await this.emailService.sendEmail(to, subject, text); // sending email with the verification code (OTP)
 
-            await this.userRepo.createOtp(email, otp); // saving otp in database
+            const sotp = await this.userRepo.createOtp(email, otp); // saving otp in database
+            console.log('otp is:', otp);
+
         } catch (err: any) {
             throw err;
         }
     }
 
-    async verifyOtp(email: string, otp: string): Promise<void> {
+    async verifyOtp(email: string | undefined, otp: string): Promise<string | never> {
+        try {
+            const otpData: IOtpDocument | null = await this.userRepo.getOtpByEmail(email);
+            console.log('verifyotp in usecase', otpData);
 
 
+            if (!email) {
+                throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' })
+            } else if (!otpData) {
+                throw new authenticationError({ message: 'OTP expired. Resend again.', statusCode: StatusCodes.BadRequest, errorField: 'otp' });
+            } else if (otpData.otp !== otp) {
+                throw new authenticationError({ message: 'The OTP you entered is incorrect.', statusCode: StatusCodes.BadRequest, errorField: 'otp' });
+            }
+
+            await this.userRepo.makeUserVerified(email)
+            const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email)
+
+            const payload: IPayload = {
+                id: userData?.id,
+                type: 'User'
+            }
+
+            const authToken: string = this.jwtService.sign(payload)
+            return authToken
+
+        } catch (err) {
+            throw err;
+        }
 
     }
 
 
-    async resendOtp(email: string): Promise<void>{
+    async resendOtp(email: string): Promise<void | never> {
+        try {
+            if (!email) {
+                throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' });
+            }
 
+            await this.generateAndSendOTP(email); // send otp via email.
+        } catch (err: any) {
+            throw err;
+        }
     }
 
-    async verifyToken(token: string | undefined): Promise<void | never>{
+    async verifyToken(token: string | undefined): Promise<void | never> {
+        try {
+            if (!token) {
+                throw new jwtTokenError({ statusCode: StatusCodes.Unauthorized, message: 'User not authenticated' })
+            }
 
+            const decoded: IPayload = this.jwtService.verifyToken(token);
+
+            if (decoded.type !== 'User') {
+                throw new jwtTokenError({ statusCode: StatusCodes.BadRequest, message: 'Invaild Token' });
+            }
+        } catch (err: any) {
+            throw err;
+        }
+    }
+
+    async getUserInfo(userId: string): Promise<IUserDocument | null> {
+        return await this.userRepo.getUserInfo(userId);
     }
 }

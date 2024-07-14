@@ -14,6 +14,7 @@ export default class JwtService implements IJwtService {
     verifyToken(token: string): IPayload | never {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
+            console.log("decoded : ",decoded);
             return decoded as IPayload;
         } catch (err: any) {
             throw err;

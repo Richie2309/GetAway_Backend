@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 
 export default interface IUser {
-  _id: ObjectId;
+  _id: string;
   email: string;
   password: string;
   fullName: string;
