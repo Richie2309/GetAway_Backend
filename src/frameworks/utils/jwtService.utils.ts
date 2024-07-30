@@ -6,7 +6,7 @@ export default class JwtService implements IJwtService {
         try {
             const token: string = jwt.sign(payload, process.env.JWT_SECRET_KEY!, { expiresIn: 86400 }); // token expiresIn
             return token;
-        } catch (err: any) {
+        } catch (err) {
             throw err;
         }
     }
@@ -14,9 +14,8 @@ export default class JwtService implements IJwtService {
     verifyToken(token: string): IPayload | never {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
-            console.log("decoded : ",decoded);
             return decoded as IPayload;
-        } catch (err: any) {
+        } catch (err) {
             throw err;
         }
     }

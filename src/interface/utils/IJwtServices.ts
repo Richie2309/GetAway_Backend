@@ -1,5 +1,3 @@
-import { ObjectId } from "mongoose";
-
 export interface IPayload {
     id: string,
     type: string

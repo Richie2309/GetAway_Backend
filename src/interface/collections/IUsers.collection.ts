@@ -10,7 +10,9 @@ export interface IUserDocument extends Document {
     id_proof?: String;
     ifsc_code?: String;
     bank_account_number?: String;
-    otp_verification: Boolean
+    otp_verification: Boolean;
+    profile_verify: Boolean;
+    is_blocked: Boolean;
 }
 
 export interface IUsersCollection extends Model<IUserDocument> { }

@@ -1,5 +1,5 @@
 import { IUserDocument } from "../interface/collections/IUsers.collection";
-import { IRegisterCredentials } from "../interface/controllers/IUserController";
+import { googleAuthBody, IRegisterCredentials } from "../interface/controllers/IUserController";
 import IUserRepo from "../interface/repositories/IUserRepo";
 import IUserUseCase from "../interface/usecase/IUserUseCase";
 import IHashingService from "../interface/utils/IHashingService";
@@ -10,6 +10,8 @@ import authenticationError from "../errors/authenticationError"
 import { StatusCodes } from "../enums/statusCode.enums";
 import { IOtpDocument } from "../interface/collections/IOtp.collections";
 import jwtTokenError from "../errors/jwtError"
+import ICloudinaryService from "../interface/utils/ICloudinaryService";
+import { IAccommodationDocument } from "../interface/collections/IAccommodations.collection";
 
 export default class UserUseCase implements IUserUseCase {
     private userRepo: IUserRepo
@@ -17,13 +19,15 @@ export default class UserUseCase implements IUserUseCase {
     private jwtService: IJwtService
     private otpService: IOtpService
     private emailService: IEmailService
+    private _cloudinaryService: ICloudinaryService
 
-    constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService) {
+    constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService, cloudinaryService: ICloudinaryService) {
         this.userRepo = userRepo
         this.hashingService = hashingService
         this.jwtService = jwtService
         this.otpService = otpService
         this.emailService = emailService
+        this._cloudinaryService = cloudinaryService
     }
 
     //REGISTER
@@ -48,7 +52,7 @@ export default class UserUseCase implements IUserUseCase {
 
     //LOGIN
     async authenticateUser(email: string, password: string): Promise<string | never> {
-        try { 
+        try {
             const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
             console.log('userdata in userusecase authenticate user', userData);
 
@@ -154,5 +158,103 @@ export default class UserUseCase implements IUserUseCase {
 
     async getUserInfo(userId: string): Promise<IUserDocument | null> {
         return await this.userRepo.getUserInfo(userId);
+    }
+
+    async googleAuthUser(name: string, email: string): Promise<string | null> {
+        try {
+            let userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
+            console.log('user usecase google auth', userData);
+
+            if (!userData) {
+                console.log(name, email, 'usecase google');
+
+                await this.userRepo.saveGoogleAuth(name, email);
+                console.log('no user data in google use case');
+
+            }
+
+            if (userData) {
+                const payload: IPayload = {
+                    id: userData._id,
+                    type: 'User'
+                };
+
+                const token = this.jwtService.sign(payload);
+
+                return token;
+            } else {
+                return null; // Return null if user data is not available
+            }
+        } catch (err) {
+            console.error(err);
+            return null; // Return null if there's an error
+        }
+    }
+
+    async updateProfile(userId: string | undefined, updateData: any): Promise<IUserDocument | null> {
+        console.log('updated data in usecase', updateData);
+
+        if (!userId) throw new Error("User ID is required");
+        return await this.userRepo.updateProfile(userId, updateData);
+    }
+
+    async updatePassword(userId: string | undefined, newPassword: string): Promise<IUserDocument | null> {
+        if (!userId) throw new Error("User ID is required");
+        const hashedPassword: string = await this.hashingService.hash(newPassword);
+        return await this.userRepo.updatePassword(userId, hashedPassword);
+    }
+
+    async updateIdentity(userId: string | undefined, images: string[]): Promise<IUserDocument | null> {
+        if (!userId) {
+            throw new Error('User ID is required');
+        }
+        try {
+            const uploadImages = await Promise.all(
+                images.map((image) => this._cloudinaryService.uploadImage(image))
+            )
+            images = uploadImages
+            console.log("in usecase", images);
+
+            return await this.userRepo.updateIdentity(userId, images);
+        } catch (error) {
+            console.error('Error updating identity:', error);
+            throw error;
+        }
+    }
+
+    async updateBankAccount(userId: string | undefined, bankDetails: { accountNumber: string; ifscCode: string }): Promise<IUserDocument | null> {
+        if (!userId) throw new Error("User ID is required");
+        return await this.userRepo.updateBankAccount(userId, bankDetails);
+    }
+
+    async addHotel(hotelData: IAccommodationDocument): Promise<void | never> {
+        try {
+            const uploadedImages = await Promise.all(
+                hotelData.photos.map((image) => this._cloudinaryService.uploadImage(image))
+            );
+            
+            // Replace base64 strings with Cloudinary URLs
+            hotelData.photos = uploadedImages;
+            
+            return await this.userRepo.addHotel(hotelData);
+        } catch (err) {
+            console.error('Error uploading images or adding hotel:', err);
+            throw err;
+        }
+    }
+
+    async getHotelById(hotelId: string): Promise<IAccommodationDocument | null> {
+        try {
+            if (!hotelId) throw new Error('Hotel ID is required');
+            return await this.userRepo.getHotelbyId(hotelId);
+        } catch (err) {
+            console.log('Error in use case while getting hotel by ID:', err);
+            throw err;
+        }
+    }
+    
+
+    async updateHotel(hotelId: string, hotelData: IAccommodationDocument): Promise<void | never> {
+        return await this.userRepo.updateHotel(hotelId,hotelData)
     }
 }

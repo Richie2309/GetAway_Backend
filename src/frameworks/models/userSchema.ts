@@ -9,7 +9,6 @@ const userSchema = new Schema({
     },
     password: {
         type: String,
-        required: true
     },
     fullName: {
         type: String,
@@ -17,25 +16,36 @@ const userSchema = new Schema({
     },
     phone: {
         type: String,
+        default: ''
     },
     booked_hotels: [{
         type: Schema.Types.ObjectId,
         ref: 'Bookings'
     }],
-    id_proof: {
+    id_proof: [{
         type: String,
-        enum: ['passport', 'drivers license', 'id']
-    },
+        default: '',
+    }],
     ifsc_code: {
         type: String,
+        default: ''
     },
     bank_account_number: {
         type: String,
+        default: ''
     },
     otp_verification: {
         type: Boolean,
         required: true,
         default: false
+    },
+    profile_verify:{
+        type:Boolean,
+        default:false
+    },
+    is_blocked:{
+        type:Boolean,
+        default:false
     }
 });
 

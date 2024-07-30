@@ -27,15 +27,19 @@ import Otp from '../models/otpSchema';
 import IJwtService from '../../interface/utils/IJwtServices';
 import JwtService from '../utils/jwtService.utils';
 import authenticateJwt from '../middleware/authMiddleware';
+import ICloudinaryService from '../../interface/utils/ICloudinaryService';
+import CloudinaryService from '../utils/cloudinaryService';
+import Accommodations from '../models/accommodationSchema';
 
 const userRouter = express.Router();
 
-const userRepo: IUserRepo = new UserRepo(Users, Otp)
+const userRepo: IUserRepo = new UserRepo(Users, Otp,Accommodations)
 const hashingService: IHashingService = new HashingService()
-const emailService: IEmailService=new EmailService()
-const otpService:IOtpService=new OtpService()
-const jwtService:IJwtService=new JwtService()
-const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService,emailService,otpService);
+const emailService: IEmailService = new EmailService()
+const otpService: IOtpService = new OtpService()
+const jwtService: IJwtService = new JwtService()
+const cloudinaryService: ICloudinaryService=new CloudinaryService()
+const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService, emailService, otpService, cloudinaryService);
 const userController: IUserController = new UserController(userUseCase);
 
 userRouter.post('/register', userController.handleRegister.bind(userController));
@@ -49,5 +53,19 @@ userRouter.post('/login', userController.handleLogin.bind(userController));
 userRouter.post('/logout', userController.handleLogout.bind(userController));
 
 userRouter.get('/getUser', authenticateJwt, userController.getUserInfo.bind(userController));
+
+userRouter.post('/googleAuth', userController.googleAuth.bind(userController))
+
+userRouter.put('/updateProfile', authenticateJwt, userController.updateProfile.bind(userController))
+
+userRouter.put('/updatePassword', authenticateJwt, userController.updatePassword.bind(userController))
+
+userRouter.put('/updateIdentity', authenticateJwt, userController.updateIdentity.bind(userController))
+
+userRouter.put('/updateBankAccount', authenticateJwt, userController.updateBankAccount.bind(userController))
+
+userRouter.post('/addHotel', authenticateJwt, userController.addHotel.bind(userController))
+
+userRouter.put('/updateHotel', authenticateJwt, userController.updateHotel.bind(userController))
 
 export default userRouter;  

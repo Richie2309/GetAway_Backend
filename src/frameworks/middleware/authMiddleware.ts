@@ -15,7 +15,6 @@ export default async function authenticateJwt(req: AuthUserReq, res: Response, n
 
     try {
         const decoded = jwtService.verifyToken(token)
-        console.log('decoded in middleware',decoded.id);
         
         if (decoded.type !== 'User') {
             res.cookie('token', '', { httpOnly: true });

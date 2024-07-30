@@ -2,8 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import IUserController, { AuthUserReq, ILoginCredentials, IRegisterCredentials } from "../../interface/controllers/IUserController";
 import { StatusCodes } from "../../enums/statusCode.enums";
 import IUserUseCase from "../../interface/usecase/IUserUseCase";
-import mongoose from "mongoose";
-import bcrypt from 'bcrypt'
 
 class UserController implements IUserController {
     private userUseCase: IUserUseCase
@@ -85,7 +83,7 @@ class UserController implements IUserController {
 
     async handleLogout(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
-            res.cookie('token', '', { httpOnly: true, expires: new Date(Date.now()) }); // clearing token stroed http only cookie to logout.
+            res.cookie('token', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
 
             res.status(StatusCodes.Success).json({
                 message: "User Logout sucessfull"
@@ -109,14 +107,16 @@ class UserController implements IUserController {
         }
     }
 
-    async getUserInfo(req: any, res: Response): Promise<void> {
+    async getUserInfo(req: AuthUserReq, res: Response): Promise<void> {
         try {
             const userId = req.user
-            console.log('getuserinfo in controlelr', userId);
 
-            // const userObjectId =mongoose.Types.ObjectId(userId);
+            if (!userId) {
+                res.status(StatusCodes.Unauthorized).json({ error: "User ID is missing" });
+                return;
+            }
+
             const user = await this.userUseCase.getUserInfo(userId);
-            console.log('user i ncontr', user);
 
             if (!user) {
                 res.status(StatusCodes.Unauthorized).json({ error: "User not found" })
@@ -126,6 +126,124 @@ class UserController implements IUserController {
         } catch (err) {
             console.log(err);
             res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' })
+        }
+    }
+
+    async googleAuth(req: Request, res: Response): Promise<void> {
+        try {
+            const { name, email } = req.body;
+            console.log('name:', name, 'email:', email, 'this is from controler google');
+
+            const token = await this.userUseCase.googleAuthUser(name, email);
+            console.log('google auth in controller', email,);
+
+            if (token) {
+                res.cookie('token', token, { httpOnly: true })
+                res.status(StatusCodes.Success).json({ token });
+            } else {
+                res.status(StatusCodes.Unauthorized).json({ message: 'Google authentication failed' });
+            }
+        } catch (err) {
+            console.error('Error in googleAuth controller:', err);
+            res.status(StatusCodes.InternalServer).json({ message: 'Internal Server Error' });
+        }
+    }
+
+    async updateProfile(req: AuthUserReq, res: Response): Promise<void> {
+        try {
+            const userId = req.user;
+            console.log('userid', userId);
+
+            const updateData = req.body.profile;
+            console.log('updataed data in controller', updateData);
+
+            const updatedUser = await this.userUseCase.updateProfile(userId, updateData);
+
+            res.status(StatusCodes.Success).json({ user: updatedUser });
+        } catch (err) {
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
+    async updatePassword(req: AuthUserReq, res: Response): Promise<void> {
+        try {
+            const userId = req.user;
+
+            const { newPassword } = req.body;
+            const updatedUser = await this.userUseCase.updatePassword(userId, newPassword);
+
+            res.status(StatusCodes.Success).json({ user: updatedUser });
+        } catch (err) {
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
+    async updateIdentity(req: AuthUserReq, res: Response): Promise<void> {
+        console.log('in controllerfdsfas', req.body);
+        try {
+            const userId = req.user;
+            const { images } = req.body
+
+
+            console.log("length", images.length);
+
+            const updatedUser = await this.userUseCase.updateIdentity(userId, images)
+            console.log("contr", updatedUser);
+
+            res.status(StatusCodes.Success).json({ user: updatedUser })
+        } catch (err) {
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
+    async updateBankAccount(req: AuthUserReq, res: Response): Promise<void> {
+        try {
+            const userId = req.user;
+
+            const { accountNumber, ifscCode } = req.body;
+
+            const updatedUser = await this.userUseCase.updateBankAccount(userId, { accountNumber, ifscCode });
+
+            res.status(StatusCodes.Success).json({ user: updatedUser });
+        } catch (err) {
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
+    async addHotel(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never> {
+        try {
+            const userId = req.user
+            const hotelData = req.body
+            // console.log(hotelData);
+            hotelData.added_by = userId
+            const newHotel = await this.userUseCase.addHotel(hotelData)
+            res.status(StatusCodes.Success).json({ hotel: newHotel })
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getHotelById(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const hotelId = req.params.hotelId;
+
+            const hotel = await this.userUseCase.getHotelById(hotelId);
+
+            res.status(StatusCodes.Success).json({ hotel });
+        } catch (err) {
+            console.error('Error in getHotel controller:', err);
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
+    async updateHotel(req: Request, res: Response, next: NextFunction): Promise<void | never> {
+        try {
+            const hotelId = req.params.id
+            const updateData = req.body
+            const updatedHotel = await this.userUseCase.updateHotel(hotelId, updateData)
+            res.status(StatusCodes.Success).json({ hotel: updatedHotel })
+        } catch (err) {
+            next(err)
         }
     }
 }
