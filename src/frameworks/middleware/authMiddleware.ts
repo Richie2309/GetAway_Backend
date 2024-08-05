@@ -12,7 +12,6 @@ export default async function authenticateJwt(req: AuthUserReq, res: Response, n
         res.status(StatusCodes.Unauthorized).json({ error: 'Access denied' })
         return;
     }
-
     try {
         const decoded = jwtService.verifyToken(token)
         

@@ -11,13 +11,16 @@ interface IUserRepo {
      makeUserVerified(email: string): Promise<void | never>;
      getUserInfo(userId: string): Promise<IUserDocument | null>
      saveGoogleAuth(name: string, email: string): Promise<void>
+     resetPassword(email: string | undefined, newPassword: string): Promise<IUserDocument | null>;
      updateProfile(userId: string, updateData: any): Promise<IUserDocument | null>;
      updatePassword(userId: string, newPassword: string): Promise<IUserDocument | null>;
      updateIdentity(userId: string, images: string[]): Promise<IUserDocument | null>;
      updateBankAccount(userId: string, bankDetails: { accountNumber: string; ifscCode: string }): Promise<IUserDocument | null>;
      addHotel(hotelData: IAccommodationDocument): Promise<void | never>;
      getHotelbyId(hotelId: string): Promise<IAccommodationDocument | null>
-     updateHotel(hotelId: string, hotelData: IAccommodationDocument): Promise<void | never>;
+     updateHotel(hotelData: IAccommodationDocument): Promise<void | never>;
+     getAccommodationsByUserId(userId: string): Promise<IAccommodationDocument[]>;
+     getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]>;
 }
 
 export default IUserRepo

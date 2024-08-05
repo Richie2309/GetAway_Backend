@@ -15,6 +15,7 @@ class UserController implements IUserController {
             console.log('handleregister', req.body);
 
             const { fullName, email, password }: IRegisterCredentials = req.body;
+
             const registerData: IRegisterCredentials = { fullName, email, password }
 
             await this.userUseCase.registerUser(registerData);
@@ -67,14 +68,12 @@ class UserController implements IUserController {
     async handleLogin(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
             const { email, password }: ILoginCredentials = req.body;
-
-            // usecase for authenticateing User
-            const token: string = await this.userUseCase.authenticateUser(email, password); // return token if credentials and user is verified or error
-
+            const response = await this.userUseCase.authenticateUser(email, password);
+            const token: string = response.token
             res.cookie('token', token, { httpOnly: true }); // Set http only cookie for token
-
             res.status(StatusCodes.Success).json({
-                message: "Successfuly login"
+                message: "Successfuly login",
+                userData: response.userData
             });
         } catch (err: any) {
             next(err);
@@ -84,7 +83,6 @@ class UserController implements IUserController {
     async handleLogout(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
             res.cookie('token', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
-
             res.status(StatusCodes.Success).json({
                 message: "User Logout sucessfull"
             });
@@ -149,13 +147,49 @@ class UserController implements IUserController {
         }
     }
 
+    async handleCheckMail(req: Request, res: Response, next: NextFunction): Promise<void | never> {
+        const { email } = req.query
+        if (!email || typeof email !== 'string') {
+            res.status(400).json({ error: 'Invalid email' });
+            return;
+        }
+        try {
+            const exists = await this.userUseCase.checkMail(email);
+            res.json({ exists });
+        } catch (err) {
+            console.error('Error checking email:', err);
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
+    async verifyForgotPasswordOtp(req: Request, res: Response): Promise<void> {
+        const { email, otp } = req.body;
+        console.log('email in cont', email);
+
+        try {
+            await this.userUseCase.verifyForgotPasswordOtp(email, otp)
+            res.status(StatusCodes.Success).json({ message: 'OTP verified successfully.' });
+        } catch (err) {
+            res.status(StatusCodes.InternalServer).json({ message: 'Internal Server Error' });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, password } = req.body;
+            const updatedUser = await this.userUseCase.resetPassword(email, password);
+
+            res.status(StatusCodes.Success).json({ user: updatedUser });
+        } catch (err) {
+            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        }
+    }
+
     async updateProfile(req: AuthUserReq, res: Response): Promise<void> {
         try {
             const userId = req.user;
-            console.log('userid', userId);
 
             const updateData = req.body.profile;
-            console.log('updataed data in controller', updateData);
 
             const updatedUser = await this.userUseCase.updateProfile(userId, updateData);
 
@@ -214,7 +248,8 @@ class UserController implements IUserController {
         try {
             const userId = req.user
             const hotelData = req.body
-            // console.log(hotelData);
+            console.log('hotel data in controller add', hotelData);
+
             hotelData.added_by = userId
             const newHotel = await this.userUseCase.addHotel(hotelData)
             res.status(StatusCodes.Success).json({ hotel: newHotel })
@@ -223,29 +258,79 @@ class UserController implements IUserController {
         }
     }
 
-    async getHotelById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async getAccommodationsByUserId(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never> {
         try {
-            const hotelId = req.params.hotelId;
-
-            const hotel = await this.userUseCase.getHotelById(hotelId);
-
-            res.status(StatusCodes.Success).json({ hotel });
-        } catch (err) {
-            console.error('Error in getHotel controller:', err);
-            res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
-        }
-    }
-
-    async updateHotel(req: Request, res: Response, next: NextFunction): Promise<void | never> {
-        try {
-            const hotelId = req.params.id
-            const updateData = req.body
-            const updatedHotel = await this.userUseCase.updateHotel(hotelId, updateData)
-            res.status(StatusCodes.Success).json({ hotel: updatedHotel })
+            const userId = req.user!
+            const accommodations = await this.userUseCase.getAccommodationsByUserId(userId)
+            res.status(StatusCodes.Success).json(accommodations)
         } catch (err) {
             next(err)
         }
     }
+
+
+    async getHotelById(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            console.log('dfhi');
+            const hotelId = req.params.hotelId;
+            console.log('hotel id in con', hotelId);
+
+            const hotel = await this.userUseCase.getHotelById(hotelId);
+            console.log('hotel', hotel);
+
+            if (hotel) {
+                res.status(StatusCodes.Success).json({ hotel });
+            } else {
+                res.status(StatusCodes.NotFound).json({ message: 'Hotel not found' });
+            }
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async updateHotel(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never> {
+        try {
+            const hotelData = req.body
+            console.log('hotel data in controller updata', hotelData);
+
+            await this.userUseCase.updateHotel(hotelData);
+            res.status(StatusCodes.Success).json({ message: 'Hotel updated successfully' });
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getAllHotels(req: Request, res: Response, next: NextFunction): Promise<void | never> {
+        try {
+            const { destination, checkIn, checkOut, guests } = req.query;
+            console.log('search parameters in controller:', { destination, checkIn, checkOut, guests });
+            const allHotels = await this.userUseCase.getAllHotels(
+                destination as string,
+                checkIn ? new Date(checkIn as string) : undefined,
+                checkOut ? new Date(checkOut as string) : undefined,
+                guests ? parseInt(guests as string, 10) : undefined
+            );
+            console.log('all hotels in controller:', allHotels);
+
+            res.status(StatusCodes.Success).json({ allHotels });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    // async searchHotel(req: Request, res: Response, next: NextFunction): Promise<void> {
+    //     try {
+    //         const { search, checkIn, checkOut, guests } = req.query;
+    //         const checkInDate = checkIn ? new Date(checkIn as string) : undefined;
+    //         const checkOutDate = checkOut ? new Date(checkOut as string) : undefined;
+    //         const guestsNumber = guests ? parseInt(guests as string, 10) : undefined;
+
+    //         const hotels = await this.userUseCase.getAllHotels(search as string, checkInDate, checkOutDate, guestsNumber);
+    //         res.json({ allHotels: hotels });
+    //     } catch (err) {
+
+    //     }
+    // }
 }
 
 export default UserController

@@ -1,4 +1,5 @@
 import { IAccommodationCollection, IAccommodationDocument } from "../../interface/collections/IAccommodations.collection";
+import { IBookingCollection } from "../../interface/collections/IBooking.collection";
 import { IOtpCollection, IOtpDocument } from "../../interface/collections/IOtp.collections";
 import { IUserDocument, IUsersCollection } from "../../interface/collections/IUsers.collection";
 import { IRegisterCredentials } from "../../interface/controllers/IUserController";
@@ -8,11 +9,13 @@ export default class UserRepo implements IUserRepo {
     private userCollection: IUsersCollection
     private otpCollection: IOtpCollection
     private _accommodationCollection: IAccommodationCollection
+    private _bookingCollection: IBookingCollection
 
-    constructor(userCollection: IUsersCollection, otpCollection: IOtpCollection, accommodationColletion: IAccommodationCollection) {
+    constructor(userCollection: IUsersCollection, otpCollection: IOtpCollection, accommodationColletion: IAccommodationCollection, bookingCollection: IBookingCollection) {
         this.userCollection = userCollection
         this.otpCollection = otpCollection
         this._accommodationCollection = accommodationColletion
+        this._bookingCollection = bookingCollection
     }
 
     async getDataByEmail(email: string): Promise<IUserDocument | null> {
@@ -96,6 +99,22 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
+    async resetPassword(email: string | undefined, newPassword: string): Promise<IUserDocument | null> {
+        try {
+            const updatedUser = await this.userCollection.findOneAndUpdate(
+                { email },
+                { $set: { password: newPassword } },
+                { new: true, runValidators: true }
+            );
+            console.log('Password updated successfully');
+            return updatedUser;
+        } catch (error) {
+            console.error('Error updating password in database:', error);
+            throw error;
+        }
+    }
+
+
     async updateProfile(userId: string, updateData: Partial<IUserDocument>): Promise<IUserDocument | null> {
         console.log('update data in repo', updateData, 'and id is', userId);
         try {
@@ -113,8 +132,6 @@ export default class UserRepo implements IUserRepo {
     }
 
     async updatePassword(userId: string, newPassword: string): Promise<IUserDocument | null> {
-        console.log('newoass', newPassword);
-
         try {
             const updatedUser = await this.userCollection.findByIdAndUpdate(
                 userId,
@@ -175,31 +192,70 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
-    async updateHotel(hotelId: string, hotelData: IAccommodationDocument): Promise<void | never> {
-        
+    async getAccommodationsByUserId(userId: string): Promise<IAccommodationDocument[]> {
         try {
-            console.log('htel data in repo',hotelData);
-            
-            const updatedHotel = await this._accommodationCollection.findByIdAndUpdate(
-                hotelId,
-                { $set: hotelData },
-                { new: true, runValidators: true }
-            );
-            console.log('Updated hotel:', updatedHotel);
-            return;
+            return await this._accommodationCollection.find({ added_by: userId });
         } catch (err) {
-            console.error('Error updating hotel in database:', err);
+            console.error('Error getting hotel in database:', err);
             throw err;
         }
     }
 
     async getHotelbyId(hotelId: string): Promise<IAccommodationDocument | null> {
         try {
-            return await this._accommodationCollection.findById(hotelId).exec();
+            return await this._accommodationCollection.findById(hotelId);
         } catch (err) {
             console.error('Error fetching hotel from database:', err);
             throw err;
         }
-    } 
+    }
+
+    async updateHotel(hotelData: IAccommodationDocument): Promise<void | never> {
+        try {
+            console.log('hotel data in repo', hotelData);
+            const { _id, ...updateData } = hotelData
+            const updatedHotel = await this._accommodationCollection.findByIdAndUpdate(
+                _id,
+                { $set: updateData },
+                { new: true, runValidators: true }
+            );
+
+            // await this._accommodationCollection.findByIdAndUpdate( _id, updateData, { new: true });
+        } catch (err) {
+            console.error('Error updating hotel in database:', err);
+            throw err;
+        }
+    }
+
+    async getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]> {
+        try {
+            let query: any = {};
+
+            if (searchQuery) {
+                query.$or = [
+                    { town: { $regex: searchQuery, $options: 'i' } },
+                    { district: { $regex: searchQuery, $options: 'i' } },
+                    { state: { $regex: searchQuery, $options: 'i' } }
+                ];
+            }
+
+            if (guests) {
+                query.maxGuests = { $gte: guests };
+            }
+
+            const bookedAccommodations = await this._bookingCollection.find({
+                checkInDate: { $lt: checkOutDate },
+                checkOutDate: { $gt: checkInDate }
+            })
+            // .distinct('accommodation');
+            if (bookedAccommodations.length > 0) {
+                query._id = { $nin: bookedAccommodations };
+            }
+            return await this._accommodationCollection.find(query);
+        } catch (err) {
+            console.error('Error getting hotels in database:', err);
+            throw err;
+        }
+    }
 
 }

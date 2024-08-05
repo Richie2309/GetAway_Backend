@@ -10,15 +10,21 @@ interface IUserController {
     verifyTokenRequest(req: Request, res: Response, next: NextFunction): Promise<void | never>;
     getUserInfo(req: Request, res: Response): Promise<void>;
     googleAuth(req: Request, res: Response): Promise<void>
+    handleCheckMail(req: Request, res: Response, next: NextFunction): Promise<void | never>;
+    verifyForgotPasswordOtp (req: Request, res: Response): Promise<void>
+    resetPassword(req: Request, res: Response): Promise<void>;
     updateProfile(req: Request, res: Response): Promise<void>;
     updatePassword(req: Request, res: Response): Promise<void>;
     updateIdentity(req: Request, res: Response): Promise<void>;
     updateBankAccount(req: Request, res: Response): Promise<void>;
     addHotel(req: Request, res: Response, next: NextFunction): Promise<void | never>;
+    getAccommodationsByUserId(req: Request, res: Response, next: NextFunction): Promise<void | never>;
     getHotelById(req: Request, res: Response, next: NextFunction): Promise<void>;
     updateHotel(req: Request, res: Response, next: NextFunction): Promise<void | never>;
-
+    getAllHotels(req: Request, res: Response, next: NextFunction): Promise<void | never>;
+    // searchHotel(req: Request, res: Response, next: NextFunction): Promise<void>;
 }
+
 export interface IRegisterCredentials {
     fullName: string,
     email: string,

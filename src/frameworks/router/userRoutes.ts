@@ -30,15 +30,16 @@ import authenticateJwt from '../middleware/authMiddleware';
 import ICloudinaryService from '../../interface/utils/ICloudinaryService';
 import CloudinaryService from '../utils/cloudinaryService';
 import Accommodations from '../models/accommodationSchema';
+import Bookings from '../models/bookingSchema';
 
 const userRouter = express.Router();
 
-const userRepo: IUserRepo = new UserRepo(Users, Otp,Accommodations)
+const userRepo: IUserRepo = new UserRepo(Users, Otp, Accommodations, Bookings)
 const hashingService: IHashingService = new HashingService()
 const emailService: IEmailService = new EmailService()
 const otpService: IOtpService = new OtpService()
 const jwtService: IJwtService = new JwtService()
-const cloudinaryService: ICloudinaryService=new CloudinaryService()
+const cloudinaryService: ICloudinaryService = new CloudinaryService()
 const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService, emailService, otpService, cloudinaryService);
 const userController: IUserController = new UserController(userUseCase);
 
@@ -56,6 +57,12 @@ userRouter.get('/getUser', authenticateJwt, userController.getUserInfo.bind(user
 
 userRouter.post('/googleAuth', userController.googleAuth.bind(userController))
 
+userRouter.get('/checkMail', userController.handleCheckMail.bind(userController))
+
+userRouter.post('/verifyForgotPasswordOtp', userController.verifyForgotPasswordOtp.bind(userController))
+
+userRouter.patch('/resetPassword', userController.resetPassword.bind(userController))
+
 userRouter.put('/updateProfile', authenticateJwt, userController.updateProfile.bind(userController))
 
 userRouter.put('/updatePassword', authenticateJwt, userController.updatePassword.bind(userController))
@@ -66,6 +73,12 @@ userRouter.put('/updateBankAccount', authenticateJwt, userController.updateBankA
 
 userRouter.post('/addHotel', authenticateJwt, userController.addHotel.bind(userController))
 
+userRouter.get('/getMyHotels', authenticateJwt, userController.getAccommodationsByUserId.bind(userController))
+
+userRouter.get('/getHotel/:hotelId', userController.getHotelById.bind(userController));
+
 userRouter.put('/updateHotel', authenticateJwt, userController.updateHotel.bind(userController))
+
+userRouter.get('/getAllHotels', userController.getAllHotels.bind(userController))
 
 export default userRouter;  

@@ -1,7 +1,7 @@
 import { IUserDocument } from "../interface/collections/IUsers.collection";
 import { googleAuthBody, IRegisterCredentials } from "../interface/controllers/IUserController";
 import IUserRepo from "../interface/repositories/IUserRepo";
-import IUserUseCase from "../interface/usecase/IUserUseCase";
+import IUserUseCase, { loginRes } from "../interface/usecase/IUserUseCase";
 import IHashingService from "../interface/utils/IHashingService";
 import IOtpService from "../interface/utils/IOtpService";
 import IEmailService from "../interface/utils/IEmailService";
@@ -51,7 +51,7 @@ export default class UserUseCase implements IUserUseCase {
     }
 
     //LOGIN
-    async authenticateUser(email: string, password: string): Promise<string | never> {
+    async authenticateUser(email: string, password: string): Promise<loginRes | never> {
         try {
             const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
             console.log('userdata in userusecase authenticate user', userData);
@@ -71,7 +71,10 @@ export default class UserUseCase implements IUserUseCase {
             }
             const token: string = this.jwtService.sign(payload);
 
-            return token;
+            return {
+                token:token,
+                userData:userData
+            }
         } catch (err: any) {
             throw err;
         }
@@ -101,7 +104,6 @@ export default class UserUseCase implements IUserUseCase {
             const otpData: IOtpDocument | null = await this.userRepo.getOtpByEmail(email);
             console.log('verifyotp in usecase', otpData);
 
-
             if (!email) {
                 throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' })
             } else if (!otpData) {
@@ -126,7 +128,6 @@ export default class UserUseCase implements IUserUseCase {
         }
 
     }
-
 
     async resendOtp(email: string): Promise<void | never> {
         try {
@@ -191,6 +192,32 @@ export default class UserUseCase implements IUserUseCase {
         }
     }
 
+    async checkMail(email: string): Promise<boolean> {
+        const user: IUserDocument | null = await this.userRepo.getDataByEmail(email)
+        if (user) {
+            await this.resendOtp(email);
+            return true;
+        }
+        return false;
+    }
+
+    async verifyForgotPasswordOtp(email: string, otp: string): Promise<boolean> {
+        const otpData: IOtpDocument | null = await this.userRepo.getOtpByEmail(email);
+        if (!email) {
+            throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' })
+        } else if (!otpData) {
+            throw new authenticationError({ message: 'OTP expired. Resend again.', statusCode: StatusCodes.BadRequest, errorField: 'otp' });
+        } else if (otpData.otp !== otp) {
+            throw new authenticationError({ message: 'The OTP you entered is incorrect.', statusCode: StatusCodes.BadRequest, errorField: 'otp' });
+        }
+        return true;
+    }
+
+    async resetPassword(email: string | undefined, newPassword: string): Promise<IUserDocument | null> {
+        const hashedPassword: string = await this.hashingService.hash(newPassword);
+        return await this.userRepo.resetPassword(email, hashedPassword);
+    }
+
     async updateProfile(userId: string | undefined, updateData: any): Promise<IUserDocument | null> {
         console.log('updated data in usecase', updateData);
 
@@ -232,13 +259,23 @@ export default class UserUseCase implements IUserUseCase {
             const uploadedImages = await Promise.all(
                 hotelData.photos.map((image) => this._cloudinaryService.uploadImage(image))
             );
-            
+
             // Replace base64 strings with Cloudinary URLs
             hotelData.photos = uploadedImages;
-            
+
             return await this.userRepo.addHotel(hotelData);
         } catch (err) {
             console.error('Error uploading images or adding hotel:', err);
+            throw err;
+        }
+    }
+
+    async getAccommodationsByUserId(userId: string): Promise<IAccommodationDocument[]> {
+        try {
+            if (!userId) throw new Error("User ID is required");
+            return this.userRepo.getAccommodationsByUserId(userId)
+        } catch (err) {
+            console.error('Error getting hotel:', err);
             throw err;
         }
     }
@@ -252,9 +289,21 @@ export default class UserUseCase implements IUserUseCase {
             throw err;
         }
     }
-    
 
-    async updateHotel(hotelId: string, hotelData: IAccommodationDocument): Promise<void | never> {
-        return await this.userRepo.updateHotel(hotelId,hotelData)
+
+    async updateHotel(hotelData: IAccommodationDocument): Promise<void | never> {
+        try {            
+            await this.userRepo.updateHotel( hotelData)
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]> {
+        try {
+            return await this.userRepo.getAllHotels(searchQuery, checkInDate, checkOutDate, guests);
+        } catch (err) {
+            throw err;
+        }
     }
 }

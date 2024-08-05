@@ -39,7 +39,6 @@ export default class AdminController implements IAdminController {
     async toggleBlockUser(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
-
             const user = await this._adminUseCase.toggleBlockUser(userId);
             res.status(StatusCodes.Success).json(user);
         } catch (err) {

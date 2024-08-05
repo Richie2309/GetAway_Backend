@@ -59,8 +59,9 @@ const accommodationSchema = new Schema({
     required: true
   },
   perks: {
-    type: Boolean,
-    enum: [["wifi", "ac", "tv", "free parking"]]
+    type: [String], 
+    enum: ["Wifi", "AC", "TV", "Parking"],
+    default: [] 
   },
   checkInTime: {
     type: String,
