@@ -1,13 +1,20 @@
 import express from 'express'
 
+//Controller
 import UserController from '../../adapters/controllers/userController';
 import IUserController from '../../interface/controllers/IUserController';
 
+//UseCase
 import UserUseCase from '../../usecase/userUseCase';
 import IUserUseCase from '../../interface/usecase/IUserUseCase';
 
+//UseRepo
 import UserRepo from '../../adapters/repositories/userRepo';
 import IUserRepo from '../../interface/repositories/IUserRepo';
+
+//Jwt Services
+import JwtService from '../utils/jwtService.utils';
+import IJwtService from '../../interface/utils/IJwtServices';
 
 //Hashing services
 import HashingService from '../utils/hashingService.utils';
@@ -21,14 +28,19 @@ import IEmailService from '../../interface/utils/IEmailService';
 import OtpService from '../utils/otpService.utils';
 import IOtpService from '../../interface/utils/IOtpService';
 
+//Cloudinary services
+import CloudinaryService from '../utils/cloudinaryService';
+import ICloudinaryService from '../../interface/utils/ICloudinaryService';
+
+//Stripe services
+import { StripeService } from '../utils/stripeService.utils';
+import { IStripeService } from '../../interface/utils/IStripeService';
+
+import authenticateJwt from '../middleware/authMiddleware';
+
 //Models
 import Users from '../models/userSchema';
 import Otp from '../models/otpSchema';
-import IJwtService from '../../interface/utils/IJwtServices';
-import JwtService from '../utils/jwtService.utils';
-import authenticateJwt from '../middleware/authMiddleware';
-import ICloudinaryService from '../../interface/utils/ICloudinaryService';
-import CloudinaryService from '../utils/cloudinaryService';
 import Accommodations from '../models/accommodationSchema';
 import Bookings from '../models/bookingSchema';
 
@@ -40,7 +52,8 @@ const emailService: IEmailService = new EmailService()
 const otpService: IOtpService = new OtpService()
 const jwtService: IJwtService = new JwtService()
 const cloudinaryService: ICloudinaryService = new CloudinaryService()
-const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService, emailService, otpService, cloudinaryService);
+const stripeService:IStripeService=new StripeService()
+const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService, emailService, otpService, cloudinaryService,stripeService);
 const userController: IUserController = new UserController(userUseCase);
 
 userRouter.post('/register', userController.handleRegister.bind(userController));
@@ -81,4 +94,10 @@ userRouter.put('/updateHotel', authenticateJwt, userController.updateHotel.bind(
 
 userRouter.get('/getAllHotels', userController.getAllHotels.bind(userController))
 
-export default userRouter;  
+userRouter.get('/checkAvailability',userController.checkAvailability.bind(userController))
+
+userRouter.post('/createPaymentIntent',authenticateJwt, userController.createPaymentIntent.bind(userController));
+
+userRouter.post('/createBooking',authenticateJwt,userController.createBooking.bind(userController))
+
+export default userRouter; 

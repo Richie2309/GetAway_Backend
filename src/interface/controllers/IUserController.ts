@@ -22,7 +22,9 @@ interface IUserController {
     getHotelById(req: Request, res: Response, next: NextFunction): Promise<void>;
     updateHotel(req: Request, res: Response, next: NextFunction): Promise<void | never>;
     getAllHotels(req: Request, res: Response, next: NextFunction): Promise<void | never>;
-    // searchHotel(req: Request, res: Response, next: NextFunction): Promise<void>;
+    checkAvailability(req: Request, res: Response, next: NextFunction): Promise<void>;
+    createBooking(req: Request, res: Response, next: NextFunction): Promise<void>; 
+    createPaymentIntent(req: Request, res: Response, next: NextFunction): Promise<void>;
 }
 
 export interface IRegisterCredentials {

@@ -248,7 +248,6 @@ class UserController implements IUserController {
         try {
             const userId = req.user
             const hotelData = req.body
-            console.log('hotel data in controller add', hotelData);
 
             hotelData.added_by = userId
             const newHotel = await this.userUseCase.addHotel(hotelData)
@@ -318,19 +317,50 @@ class UserController implements IUserController {
         }
     }
 
-    // async searchHotel(req: Request, res: Response, next: NextFunction): Promise<void> {
-    //     try {
-    //         const { search, checkIn, checkOut, guests } = req.query;
-    //         const checkInDate = checkIn ? new Date(checkIn as string) : undefined;
-    //         const checkOutDate = checkOut ? new Date(checkOut as string) : undefined;
-    //         const guestsNumber = guests ? parseInt(guests as string, 10) : undefined;
+    async checkAvailability(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { accommodationId, checkIn, checkOut } = req.query;
+            const isAvailable = await this.userUseCase.checkAvailability(accommodationId as string, new Date(checkIn as string), new Date(checkOut as string));
+            console.log('isavailable',isAvailable);
+            
+            res.status(StatusCodes.Success).json({ isAvailable });
+        } catch (err) {
+            next(err);
+        }
+    }
 
-    //         const hotels = await this.userUseCase.getAllHotels(search as string, checkInDate, checkOutDate, guestsNumber);
-    //         res.json({ allHotels: hotels });
-    //     } catch (err) {
+    async createBooking(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        const { accommodationId, checkIn, checkOut, guests, totalPrice } = req.body;
+        const userId = req.user
+        
+        try {
+            if (!userId) {
+                res.status(StatusCodes.Unauthorized).json({ error: 'User not authenticated' });
+                return;
+            }
+            const booking = await this.userUseCase.createBooking(accommodationId, userId, new Date(checkIn), new Date(checkOut), guests, totalPrice);
+             
+            res.status(StatusCodes.Success).json({ booking });
+        } catch (err) {
+            next(err);
+        }
+    }
 
-    //     }
-    // }
+    async createPaymentIntent(req: Request, res: Response, next: NextFunction): Promise<void> {
+        const { amount } = req.body;
+        console.log('ho');
+        
+        try {
+            console.log('amount',amount);
+            
+          const paymentIntent = await this.userUseCase.createPaymentIntent(amount);
+          console.log('paymentin',paymentIntent);
+          
+          res.status(StatusCodes.Success).json({ clientSecret: paymentIntent.client_secret });
+        } catch (err) {
+          next(err);
+        }
+    }
 }
 
 export default UserController

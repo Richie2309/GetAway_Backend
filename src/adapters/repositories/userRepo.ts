@@ -1,5 +1,5 @@
 import { IAccommodationCollection, IAccommodationDocument } from "../../interface/collections/IAccommodations.collection";
-import { IBookingCollection } from "../../interface/collections/IBooking.collection";
+import { IBookingCollection, IBookingDocument } from "../../interface/collections/IBooking.collection";
 import { IOtpCollection, IOtpDocument } from "../../interface/collections/IOtp.collections";
 import { IUserDocument, IUsersCollection } from "../../interface/collections/IUsers.collection";
 import { IRegisterCredentials } from "../../interface/controllers/IUserController";
@@ -254,6 +254,47 @@ export default class UserRepo implements IUserRepo {
             return await this._accommodationCollection.find(query);
         } catch (err) {
             console.error('Error getting hotels in database:', err);
+            throw err;
+        }
+    }
+
+    async checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean> {
+        try {
+            console.log("accomodationId  : ", accommodationId);
+            console.log("checkInDate  : ", checkInDate);
+            console.log("checkOutDate : ", checkOutDate);
+
+            const bookings = await this._bookingCollection.find({
+                accommodation: accommodationId,
+                $or: [
+                    { checkInDate: { $lte: checkOutDate, $gte: checkInDate } },
+                    { checkOutDate: { $gte: checkInDate, $lte: checkOutDate } },
+                    { checkInDate: { $lte: checkInDate }, checkOutDate: { $gte: checkOutDate } }
+                ]
+            });
+            console.log("bookings : ", bookings);
+
+            return bookings.length === 0;
+        } catch (err) {
+            console.error('Error checking availability in database:', err);
+            throw err;
+        }
+    }
+
+    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument> {
+        try {
+            const newBooking = new this._bookingCollection({
+                accommodation: accommodationId,
+                user: userId,
+                checkInDate: checkIn,
+                checkOutDate: checkOut,
+                guests,
+                totalPrice,
+                status: 'Booked',
+            });
+
+            return await newBooking.save();
+        } catch (err) {
             throw err;
         }
     }

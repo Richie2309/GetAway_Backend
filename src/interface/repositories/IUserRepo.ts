@@ -1,4 +1,5 @@
 import { IAccommodationDocument } from "../collections/IAccommodations.collection";
+import { IBookingDocument } from "../collections/IBooking.collection";
 import { IOtpDocument } from "../collections/IOtp.collections";
 import { IUserDocument } from "../collections/IUsers.collection"
 import { IRegisterCredentials } from "../controllers/IUserController"
@@ -21,6 +22,8 @@ interface IUserRepo {
      updateHotel(hotelData: IAccommodationDocument): Promise<void | never>;
      getAccommodationsByUserId(userId: string): Promise<IAccommodationDocument[]>;
      getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]>;
+     checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
+     createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument>
 }
 
 export default IUserRepo

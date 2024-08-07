@@ -15,3 +15,10 @@ export interface IBookingDocument extends Document {
 }
 
 export interface IBookingCollection extends Model<IBookingDocument> { } 
+
+export interface IPaymentIntent {
+  amount: number;
+  currency: string;
+  client_secret?: string | null;
+}
+

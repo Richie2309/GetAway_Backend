@@ -11,7 +11,10 @@ import { StatusCodes } from "../enums/statusCode.enums";
 import { IOtpDocument } from "../interface/collections/IOtp.collections";
 import jwtTokenError from "../errors/jwtError"
 import ICloudinaryService from "../interface/utils/ICloudinaryService";
+import { IStripeService } from "../interface/utils/IStripeService";
 import { IAccommodationDocument } from "../interface/collections/IAccommodations.collection";
+import { IBookingDocument, IPaymentIntent } from "../interface/collections/IBooking.collection";
+import Stripe from "stripe";
 
 export default class UserUseCase implements IUserUseCase {
     private userRepo: IUserRepo
@@ -20,14 +23,16 @@ export default class UserUseCase implements IUserUseCase {
     private otpService: IOtpService
     private emailService: IEmailService
     private _cloudinaryService: ICloudinaryService
+    private _stripeService:IStripeService
 
-    constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService, cloudinaryService: ICloudinaryService) {
+    constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService, cloudinaryService: ICloudinaryService,stripeService:IStripeService) {
         this.userRepo = userRepo
         this.hashingService = hashingService
         this.jwtService = jwtService
         this.otpService = otpService
         this.emailService = emailService
         this._cloudinaryService = cloudinaryService
+        this._stripeService=stripeService
     }
 
     //REGISTER
@@ -72,8 +77,8 @@ export default class UserUseCase implements IUserUseCase {
             const token: string = this.jwtService.sign(payload);
 
             return {
-                token:token,
-                userData:userData
+                token: token,
+                userData: userData
             }
         } catch (err: any) {
             throw err;
@@ -292,8 +297,8 @@ export default class UserUseCase implements IUserUseCase {
 
 
     async updateHotel(hotelData: IAccommodationDocument): Promise<void | never> {
-        try {            
-            await this.userRepo.updateHotel( hotelData)
+        try {
+            await this.userRepo.updateHotel(hotelData)
         } catch (err) {
             throw err
         }
@@ -305,5 +310,29 @@ export default class UserUseCase implements IUserUseCase {
         } catch (err) {
             throw err;
         }
+    }
+
+    async checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean> {
+        try {
+            return await this.userRepo.checkAvailability(accommodationId, checkInDate, checkOutDate);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument> {
+        try {
+            return await this.userRepo.createBooking(accommodationId, userId, checkIn, checkOut, guests, totalPrice);
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent> {
+        try {
+            return await this._stripeService.createPaymentIntentService(amount)
+          } catch (err) {
+            throw err;
+          }
     }
 }
