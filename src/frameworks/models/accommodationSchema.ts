@@ -88,5 +88,7 @@ const accommodationSchema = new Schema({
   timestamps: true
 });
 
+accommodationSchema.index({ town: 'text', district: 'text', state: 'text' });
+
 const Accommodations: IAccommodationCollection = mongoose.model<IAccommodationDocument>('Accommodations', accommodationSchema)
 export default Accommodations

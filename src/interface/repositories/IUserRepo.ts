@@ -1,5 +1,7 @@
 import { IAccommodationDocument } from "../collections/IAccommodations.collection";
-import { IBookingDocument } from "../collections/IBooking.collection";
+import { IAccommodationWithBookingDetails, IBookingDocument } from "../collections/IBooking.collection";
+import { IConversationDocument } from "../collections/IConversation.collections";
+import { IMessageDocument } from "../collections/IMessage.collections";
 import { IOtpDocument } from "../collections/IOtp.collections";
 import { IUserDocument } from "../collections/IUsers.collection"
 import { IRegisterCredentials } from "../controllers/IUserController"
@@ -24,6 +26,11 @@ interface IUserRepo {
      getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]>;
      checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
      createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument>
+     getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]>;
+     getSchedule(hotelId: string): Promise<IBookingDocument[]>;
+     getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]>
+     sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument>
+     getMessagedUsers(hostId: string): Promise<IUserDocument[] | null>
 }
 
 export default IUserRepo

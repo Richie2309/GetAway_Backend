@@ -2,12 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import IUserController, { AuthUserReq, ILoginCredentials, IRegisterCredentials } from "../../interface/controllers/IUserController";
 import { StatusCodes } from "../../enums/statusCode.enums";
 import IUserUseCase from "../../interface/usecase/IUserUseCase";
-
+import { Server as SocketIOServer } from 'socket.io';
+import { IMessageDocument } from "../../interface/collections/IMessage.collections";
 class UserController implements IUserController {
     private userUseCase: IUserUseCase
 
-    constructor(userUseCase: IUserUseCase) {
-        this.userUseCase = userUseCase
+    constructor(userUseCase: IUserUseCase, io: SocketIOServer) {
+        this.userUseCase = userUseCase;
     }
 
     async handleRegister(req: Request, res: Response, next: NextFunction): Promise<void | never> {
@@ -167,8 +168,10 @@ class UserController implements IUserController {
         console.log('email in cont', email);
 
         try {
-            await this.userUseCase.verifyForgotPasswordOtp(email, otp)
-            res.status(StatusCodes.Success).json({ message: 'OTP verified successfully.' });
+            const token = await this.userUseCase.verifyForgotPasswordOtp(email, otp)
+            console.log('token in contrlor', token);
+
+            res.status(StatusCodes.Success).json({ message: 'OTP verified successfully.', token });
         } catch (err) {
             res.status(StatusCodes.InternalServer).json({ message: 'Internal Server Error' });
         }
@@ -176,8 +179,8 @@ class UserController implements IUserController {
 
     async resetPassword(req: Request, res: Response): Promise<void> {
         try {
-            const { email, password } = req.body;
-            const updatedUser = await this.userUseCase.resetPassword(email, password);
+            const { token, email, password } = req.body;
+            const updatedUser = await this.userUseCase.resetPassword(token, email, password);
 
             res.status(StatusCodes.Success).json({ user: updatedUser });
         } catch (err) {
@@ -321,8 +324,8 @@ class UserController implements IUserController {
         try {
             const { accommodationId, checkIn, checkOut } = req.query;
             const isAvailable = await this.userUseCase.checkAvailability(accommodationId as string, new Date(checkIn as string), new Date(checkOut as string));
-            console.log('isavailable',isAvailable);
-            
+            console.log('isavailable', isAvailable);
+
             res.status(StatusCodes.Success).json({ isAvailable });
         } catch (err) {
             next(err);
@@ -332,14 +335,14 @@ class UserController implements IUserController {
     async createBooking(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
         const { accommodationId, checkIn, checkOut, guests, totalPrice } = req.body;
         const userId = req.user
-        
+
         try {
             if (!userId) {
                 res.status(StatusCodes.Unauthorized).json({ error: 'User not authenticated' });
                 return;
             }
             const booking = await this.userUseCase.createBooking(accommodationId, userId, new Date(checkIn), new Date(checkOut), guests, totalPrice);
-             
+
             res.status(StatusCodes.Success).json({ booking });
         } catch (err) {
             next(err);
@@ -349,18 +352,80 @@ class UserController implements IUserController {
     async createPaymentIntent(req: Request, res: Response, next: NextFunction): Promise<void> {
         const { amount } = req.body;
         console.log('ho');
-        
+
         try {
-            console.log('amount',amount);
-            
-          const paymentIntent = await this.userUseCase.createPaymentIntent(amount);
-          console.log('paymentin',paymentIntent);
-          
-          res.status(StatusCodes.Success).json({ clientSecret: paymentIntent.client_secret });
+            console.log('amount', amount);
+
+            const paymentIntent = await this.userUseCase.createPaymentIntent(amount);
+            console.log('paymentin', paymentIntent);
+
+            res.status(StatusCodes.Success).json({ clientSecret: paymentIntent.client_secret });
         } catch (err) {
-          next(err);
+            next(err);
         }
     }
+
+    async getBookedHotels(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never> {
+        try {
+            const userId = req.user!
+            const accommodations = await this.userUseCase.getBookedHotels(userId)
+            res.status(StatusCodes.Success).json(accommodations)
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getSchedule(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const hotelId = req.params.hotelId
+            const bookings = await this.userUseCase.getSchedule(hotelId);
+            res.status(StatusCodes.Success).json(bookings);
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getToken(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.cookies.token
+            res.status(StatusCodes.Success).json(userId)
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getMessages(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const senderId = req.user!;
+            const receiverId = req.params.receiverId;
+            const messages = await this.userUseCase.getMessages(senderId, receiverId);
+            res.status(StatusCodes.Success).json(messages);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async sendMessage(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const senderId = req.user!
+            const { receiverId, message } = req.body;
+            const newMessage = await this.userUseCase.sendMessage(senderId, receiverId, message)
+            res.status(StatusCodes.Success).json(newMessage)
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getMessagedUsers(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const hostId = req.user!
+            const users = await this.userUseCase.getMessagedUsers(hostId);
+            res.status(StatusCodes.Success).json(users);
+        } catch (err) {
+            next(err)
+        }
+    }
+
 }
 
 export default UserController

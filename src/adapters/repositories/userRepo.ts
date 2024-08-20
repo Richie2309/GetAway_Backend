@@ -1,5 +1,7 @@
 import { IAccommodationCollection, IAccommodationDocument } from "../../interface/collections/IAccommodations.collection";
-import { IBookingCollection, IBookingDocument } from "../../interface/collections/IBooking.collection";
+import { IAccommodationWithBookingDetails, IBookingCollection, IBookingDocument } from "../../interface/collections/IBooking.collection";
+import { IConversationCollection } from "../../interface/collections/IConversation.collections";
+import { IMessageCollection, IMessageDocument } from "../../interface/collections/IMessage.collections";
 import { IOtpCollection, IOtpDocument } from "../../interface/collections/IOtp.collections";
 import { IUserDocument, IUsersCollection } from "../../interface/collections/IUsers.collection";
 import { IRegisterCredentials } from "../../interface/controllers/IUserController";
@@ -10,12 +12,16 @@ export default class UserRepo implements IUserRepo {
     private otpCollection: IOtpCollection
     private _accommodationCollection: IAccommodationCollection
     private _bookingCollection: IBookingCollection
+    private _conversationCollection: IConversationCollection
+    private _messageCollection: IMessageCollection
 
-    constructor(userCollection: IUsersCollection, otpCollection: IOtpCollection, accommodationColletion: IAccommodationCollection, bookingCollection: IBookingCollection) {
+    constructor(userCollection: IUsersCollection, otpCollection: IOtpCollection, accommodationColletion: IAccommodationCollection, bookingCollection: IBookingCollection, conversationCollection: IConversationCollection, messageCollection: IMessageCollection) {
         this.userCollection = userCollection
         this.otpCollection = otpCollection
         this._accommodationCollection = accommodationColletion
         this._bookingCollection = bookingCollection
+        this._conversationCollection = conversationCollection
+        this._messageCollection = messageCollection
     }
 
     async getDataByEmail(email: string): Promise<IUserDocument | null> {
@@ -47,7 +53,7 @@ export default class UserRepo implements IUserRepo {
             const newOtp: IOtpDocument = new this.otpCollection({
                 email: email,
                 otp: otp,
-                expiresAt: new Date(Date.now() + 90000)
+                expiresAt: new Date(Date.now() + 300000)
             });
 
             await newOtp.save();
@@ -244,13 +250,17 @@ export default class UserRepo implements IUserRepo {
             }
 
             const bookedAccommodations = await this._bookingCollection.find({
-                checkInDate: { $lt: checkOutDate },
-                checkOutDate: { $gt: checkInDate }
-            })
-            // .distinct('accommodation');
+                $or: [
+                    { checkInDate: { $lt: checkOutDate, $gte: checkInDate } },
+                    { checkOutDate: { $gt: checkInDate, $lte: checkOutDate } },
+                    { checkInDate: { $lte: checkInDate }, checkOutDate: { $gte: checkOutDate } }
+                ]
+            }).distinct('accommodation');
+
             if (bookedAccommodations.length > 0) {
                 query._id = { $nin: bookedAccommodations };
             }
+
             return await this._accommodationCollection.find(query);
         } catch (err) {
             console.error('Error getting hotels in database:', err);
@@ -299,4 +309,139 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
+    async getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]> {
+        try {
+            const bookings = await this._bookingCollection.find({ user: userId })
+                .populate<{ accommodation: IAccommodationDocument }>('accommodation')
+                .exec();
+            const accommodationsWithBookingDetails = bookings.map(booking => ({
+                accommodation: booking.accommodation as IAccommodationDocument,
+                guests: booking.guests,
+                totalPrice: booking.totalPrice,
+                status: booking.status,
+                checkInDate: booking.checkInDate,
+                checkOutDate: booking.checkOutDate,
+            }));
+
+            return accommodationsWithBookingDetails;
+        } catch (err) {
+            console.error('Error getting hotel in database:', err);
+            throw err;
+        }
+    }
+
+    async getSchedule(hotelId: string): Promise<IBookingDocument[]> {
+        try {
+            const bookings = await this._bookingCollection.find({ accommodation: hotelId }).populate('user', 'fullName');
+            return bookings;
+        } catch (err) {
+            console.error('Error getting guest in database:', err);
+            throw err;
+        }
+    }
+
+    async getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]> {
+        try {
+
+            const conversation = await this._conversationCollection
+                .findOne({
+                    participants: { $all: [senderId, receiverId] }
+                })
+                .populate<{ messages: IMessageDocument[] }>({
+                    path: 'messages',
+                    model: this._messageCollection
+                })
+                .exec();
+
+            if (!conversation) {
+                return [];
+            }
+
+            const unreadEntry = conversation.unreadMessages.find(entry => entry.userId.toString() === senderId);
+        if (unreadEntry) {
+            unreadEntry.count = 0; // Reset unread count for the sender
+            await conversation.save();
+        }
+
+             return conversation.messages.length > 0 && 'message' in conversation.messages[0]
+            ? conversation.messages as IMessageDocument[]
+            : [];
+        } catch (err) {
+            console.error('Error getting chat details', err);
+            throw err;
+        }
+    }
+
+    async sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument> {
+        try {
+            let conversation = await this._conversationCollection.findOne({
+                participants: { $all: [senderId, receiverId] }
+            })
+
+            if (!conversation) {
+                conversation = await this._conversationCollection.create({
+                    participants: [senderId, receiverId],
+                    messages: [],
+                    unreadMessages: []
+                });
+            }
+
+            const newMessage = await this._messageCollection.create({
+                senderId,
+                receiverId,
+                message
+            });
+
+            conversation.messages.push(newMessage.id);
+
+            // Update unread message count for the receiver
+            const unreadEntry = conversation.unreadMessages.find(entry => entry.userId.toString() === receiverId);
+            if (unreadEntry) {
+                unreadEntry.count += 1;
+            } else {
+                conversation.unreadMessages.push({ userId: receiverId, count: 1 });
+            }
+
+            await conversation.save();
+
+            return newMessage;
+        } catch (err) {
+            console.error('Error getting chat details', err);
+            throw err;
+        }
+    }
+
+    async getMessagedUsers(hostId: string): Promise<IUserDocument[] | null> {
+        try {
+            // Find all conversations where the host is a participant
+            const conversations = await this._conversationCollection.find({
+                participants: hostId
+            }).populate('participants', '_id fullName email')
+            
+
+            // Extract unique users who are not the host
+            const uniqueUsers = new Map();
+            conversations.forEach(convo => {
+                convo.participants.forEach((participant: any) => {
+                    if (participant._id.toString() !== hostId) {
+                        const unreadEntry = convo.unreadMessages.find(entry => entry.userId.toString() === hostId.toString());
+                        const unreadCount = unreadEntry ? unreadEntry.count : 0;
+
+                        uniqueUsers.set(participant._id.toString(), {
+                            userId: participant._id,
+                            fullName: participant.fullName,
+                            email: participant.email,
+                            unreadMessagesCount: unreadCount
+                        });
+                    }
+                });
+            });
+
+            // // Convert the Map values to an array
+            return Array.from(uniqueUsers.values());
+        } catch (err) {
+            console.error('Error getting messaged users', err);
+            throw err;
+        }
+    }
 }

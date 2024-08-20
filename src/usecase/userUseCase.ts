@@ -1,5 +1,5 @@
 import { IUserDocument } from "../interface/collections/IUsers.collection";
-import { googleAuthBody, IRegisterCredentials } from "../interface/controllers/IUserController";
+import { IRegisterCredentials } from "../interface/controllers/IUserController";
 import IUserRepo from "../interface/repositories/IUserRepo";
 import IUserUseCase, { loginRes } from "../interface/usecase/IUserUseCase";
 import IHashingService from "../interface/utils/IHashingService";
@@ -13,8 +13,11 @@ import jwtTokenError from "../errors/jwtError"
 import ICloudinaryService from "../interface/utils/ICloudinaryService";
 import { IStripeService } from "../interface/utils/IStripeService";
 import { IAccommodationDocument } from "../interface/collections/IAccommodations.collection";
-import { IBookingDocument, IPaymentIntent } from "../interface/collections/IBooking.collection";
+import { IAccommodationWithBookingDetails, IBookingDocument, IPaymentIntent } from "../interface/collections/IBooking.collection";
 import Stripe from "stripe";
+import { IMessageDocument } from "../interface/collections/IMessage.collections";
+import { io } from "../server";
+import { getRecieverId } from "../frameworks/config/socketHandlers";
 
 export default class UserUseCase implements IUserUseCase {
     private userRepo: IUserRepo
@@ -23,16 +26,16 @@ export default class UserUseCase implements IUserUseCase {
     private otpService: IOtpService
     private emailService: IEmailService
     private _cloudinaryService: ICloudinaryService
-    private _stripeService:IStripeService
+    private _stripeService: IStripeService
 
-    constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService, cloudinaryService: ICloudinaryService,stripeService:IStripeService) {
+    constructor(userRepo: IUserRepo, hashingService: IHashingService, jwtService: IJwtService, emailService: IEmailService, otpService: IOtpService, cloudinaryService: ICloudinaryService, stripeService: IStripeService) {
         this.userRepo = userRepo
         this.hashingService = hashingService
         this.jwtService = jwtService
         this.otpService = otpService
         this.emailService = emailService
         this._cloudinaryService = cloudinaryService
-        this._stripeService=stripeService
+        this._stripeService = stripeService
     }
 
     //REGISTER
@@ -206,8 +209,10 @@ export default class UserUseCase implements IUserUseCase {
         return false;
     }
 
-    async verifyForgotPasswordOtp(email: string, otp: string): Promise<boolean> {
+    async verifyForgotPasswordOtp(email: string, otp: string): Promise<string> {
         const otpData: IOtpDocument | null = await this.userRepo.getOtpByEmail(email);
+        console.log('in repo verforpas');
+
         if (!email) {
             throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' })
         } else if (!otpData) {
@@ -215,10 +220,17 @@ export default class UserUseCase implements IUserUseCase {
         } else if (otpData.otp !== otp) {
             throw new authenticationError({ message: 'The OTP you entered is incorrect.', statusCode: StatusCodes.BadRequest, errorField: 'otp' });
         }
-        return true;
+        const token = this.jwtService.sign({ id: email, type: 'reset-password' });
+        return token;
+        // return true;
     }
 
-    async resetPassword(email: string | undefined, newPassword: string): Promise<IUserDocument | null> {
+    async resetPassword(token: string, email: string | undefined, newPassword: string): Promise<IUserDocument | null> {
+        const decoded = this.jwtService.verifyToken(token);
+
+        if (decoded.type !== 'reset-password') {
+            throw new Error('Invalid token type');
+        }
         const hashedPassword: string = await this.hashingService.hash(newPassword);
         return await this.userRepo.resetPassword(email, hashedPassword);
     }
@@ -331,8 +343,66 @@ export default class UserUseCase implements IUserUseCase {
     async createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent> {
         try {
             return await this._stripeService.createPaymentIntentService(amount)
-          } catch (err) {
+        } catch (err) {
             throw err;
-          }
+        }
+    }
+
+    async getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]> {
+        try {
+            if (!userId) throw new Error("User ID is required");
+            return this.userRepo.getBookedHotels(userId)
+        } catch (err) {
+            console.error('Error getting hotel:', err);
+            throw err;
+        }
+    }
+
+    async getSchedule(hotelId: string): Promise<IBookingDocument[]> {
+        try {
+            if (!hotelId) throw new Error("Hotel ID is required");
+            return this.userRepo.getSchedule(hotelId)
+        } catch (err) {
+            console.error('Error getting guest details:', err);
+            throw err;
+        }
+    }
+
+    async getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]> {
+        try {
+            if (!senderId) throw new Error("senderId ID is required");
+            if (!receiverId) throw new Error("receiverId ID is required");
+            return await this.userRepo.getMessages(senderId, receiverId);
+        } catch (err) {
+            console.error('Error getting chat details', err);
+            throw err;
+        }
+    }
+
+    async sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument> {
+        try {
+            if (!senderId) throw new Error("senderId ID is required");
+            if (!receiverId) throw new Error("receiverId ID is required");
+            const newMessage = await this.userRepo.sendMessage(senderId, receiverId, message);
+            const checkId = getRecieverId(receiverId)
+
+            if (checkId) {
+                io.to(receiverId).emit('newMessage', newMessage)
+            }
+            return newMessage;
+        } catch (err) {
+            console.error('Error getting chat details', err);
+            throw err;
+        }
+    }
+
+    async getMessagedUsers(hostId: string): Promise<IUserDocument[] | null> {
+        try {
+            if (!hostId) throw new Error("hostId ID is required");
+            return await this.userRepo.getMessagedUsers(hostId)
+        } catch (err) {
+            console.error('Error getting messages users', err);
+            throw err;
+        }
     }
 }

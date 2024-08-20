@@ -25,6 +25,12 @@ interface IUserController {
     checkAvailability(req: Request, res: Response, next: NextFunction): Promise<void>;
     createBooking(req: Request, res: Response, next: NextFunction): Promise<void>; 
     createPaymentIntent(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getBookedHotels(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never>;
+    getSchedule(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getToken(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
+    getMessages(req: Request, res: Response, next: NextFunction): Promise<void>;
+    sendMessage(req: Request, res: Response, next: NextFunction): Promise<void>;
+    getMessagedUsers(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
 }
 
 export interface IRegisterCredentials {

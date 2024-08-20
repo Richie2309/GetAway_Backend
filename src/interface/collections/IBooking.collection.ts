@@ -1,4 +1,5 @@
 import { Document, Model, ObjectId } from "mongoose";
+import { IAccommodationDocument } from "./IAccommodations.collection";
 
 export interface IBookingDocument extends Document {
   _id: string;
@@ -22,3 +23,11 @@ export interface IPaymentIntent {
   client_secret?: string | null;
 }
 
+export interface IAccommodationWithBookingDetails {
+  accommodation: IAccommodationDocument;
+  guests: number;
+  totalPrice: number;
+  status: string;
+  checkInDate: Date;
+  checkOutDate: Date;
+}

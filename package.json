@@ -17,6 +17,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/morgan": "^1.9.9",
     "@types/nodemailer": "^6.4.15",
+    "@types/socket.io": "^3.0.2",
     "nodemon": "^3.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
@@ -33,6 +34,7 @@
     "mongoose": "^8.4.4",
     "morgan": "^1.10.0",
     "nodemailer": "^6.9.14",
+    "socket.io": "^4.7.5",
     "stripe": "^16.6.0"
   }
 }

@@ -1,8 +1,9 @@
 import { IUserDocument } from "../collections/IUsers.collection";
-import { googleAuthBody, IRegisterCredentials } from "../controllers/IUserController";
+import {  IRegisterCredentials } from "../controllers/IUserController";
 import { IAccommodationDocument } from "../collections/IAccommodations.collection";
-import { IBookingDocument, IPaymentIntent } from "../collections/IBooking.collection";
+import { IAccommodationWithBookingDetails, IBookingDocument, IPaymentIntent } from "../collections/IBooking.collection";
 import Stripe from "stripe";
+import { IMessageDocument } from "../collections/IMessage.collections";
 
 interface IUserUseCase {
     authenticateUser(email: string, password: string): Promise<loginRes | never>;
@@ -13,8 +14,8 @@ interface IUserUseCase {
     getUserInfo(userId: string): Promise<IUserDocument | null>
     googleAuthUser(name: string, email: string): Promise<string | null>
     checkMail(email: string): Promise<boolean>;
-    verifyForgotPasswordOtp(email: string, otp: string): Promise<boolean>
-    resetPassword(email: string | undefined, newPassword: string): Promise<IUserDocument | null>;
+    verifyForgotPasswordOtp(email: string, otp: string): Promise<string>
+    resetPassword(token: string, email: string | undefined, newPassword: string): Promise<IUserDocument | null>;
     updateProfile(userId: string | undefined, updateData: any): Promise<IUserDocument | null>;
     updatePassword(userId: string | undefined, newPassword: string): Promise<IUserDocument | null>;
     updateIdentity(userId: string | undefined, images: string[]): Promise<IUserDocument | null>;
@@ -27,6 +28,11 @@ interface IUserUseCase {
     checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
     createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument>;
     createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent>;
+    getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]>;
+    getSchedule(hotelId: string): Promise<IBookingDocument[]>;
+    getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[] | null>
+    sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument>
+    getMessagedUsers(hostId: string): Promise<IUserDocument[]|null>
 }
 
 export default IUserUseCase
