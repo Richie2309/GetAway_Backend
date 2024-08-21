@@ -9,6 +9,10 @@ export interface IAccommodationDocument extends Document {
   district: string;
   state: string;
   address: string;
+  location: {
+    type: 'Point';
+    coordinates: number[];
+  };
   photos: string[];
   description: string;
   maxGuests: number;

@@ -277,7 +277,6 @@ export default class UserUseCase implements IUserUseCase {
                 hotelData.photos.map((image) => this._cloudinaryService.uploadImage(image))
             );
 
-            // Replace base64 strings with Cloudinary URLs
             hotelData.photos = uploadedImages;
 
             return await this.userRepo.addHotel(hotelData);

@@ -251,7 +251,6 @@ class UserController implements IUserController {
         try {
             const userId = req.user
             const hotelData = req.body
-
             hotelData.added_by = userId
             const newHotel = await this.userUseCase.addHotel(hotelData)
             res.status(StatusCodes.Success).json({ hotel: newHotel })

@@ -33,6 +33,14 @@ const accommodationSchema = new Schema({
     type: String,
     required: true
   },
+  latitude: {
+    type: String,
+    required: false,
+  },
+  longitude: {
+    type: String,
+    required: false,
+  },
   photos: [{
     type: String,
     default: '',

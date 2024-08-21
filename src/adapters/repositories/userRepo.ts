@@ -235,7 +235,9 @@ export default class UserRepo implements IUserRepo {
 
     async getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]> {
         try {
-            let query: any = {};
+            let query: any = {
+                isverified: true // Only include verified accommodations
+            };
 
             if (searchQuery) {
                 query.$or = [
