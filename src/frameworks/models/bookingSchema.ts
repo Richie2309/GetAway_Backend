@@ -24,6 +24,10 @@ const bookingSchema = new Schema({
     type: Number,
     required: true
   },
+  paymentIntentId: {
+    type: String,
+    required: true, 
+  },
   totalPrice: {
     type: Number,
     required: true
@@ -45,7 +49,6 @@ const bookingSchema = new Schema({
     type: Date,
     required: false
   }
-  // Add more fields if necessary, e.g., booking status, number of guests, etc.
 }, {
   timestamps: true
 });

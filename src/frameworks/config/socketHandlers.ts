@@ -15,7 +15,6 @@ export default function setupSocketHandlers(io: Server) {
   io.on("connection", (socket: Socket) => {
 
     const token = socket.handshake.auth.token;
-    console.log(token);
 
     try {
       const decoded = jwtService.verifyToken(token);

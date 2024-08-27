@@ -57,7 +57,7 @@ const jwtService: IJwtService = new JwtService()
 const cloudinaryService: ICloudinaryService = new CloudinaryService()
 const stripeService: IStripeService = new StripeService()
 const userUseCase: IUserUseCase = new UserUseCase(userRepo, hashingService, jwtService, emailService, otpService, cloudinaryService, stripeService);
-const userController: IUserController = new UserController(userUseCase,io);
+const userController: IUserController = new UserController(userUseCase, io);
 
 userRouter.post('/register', userController.handleRegister.bind(userController));
 
@@ -103,6 +103,8 @@ userRouter.post('/createPaymentIntent', authenticateJwt, userController.createPa
 
 userRouter.post('/createBooking', authenticateJwt, userController.createBooking.bind(userController))
 
+userRouter.post('/cancelBooking/:bookingId', authenticateJwt, userController.cancelBooking.bind(userController))
+
 userRouter.get('/getBookedHotels', authenticateJwt, userController.getBookedHotels.bind(userController))
 
 userRouter.get('/getSchedule/:hotelId', authenticateJwt, userController.getSchedule.bind(userController))
@@ -113,6 +115,6 @@ userRouter.get('/getMessage/:receiverId', authenticateJwt, userController.getMes
 
 userRouter.post('/sendMessage', authenticateJwt, userController.sendMessage.bind(userController))
 
-userRouter.get('/getMessagedUsers',authenticateJwt,userController.getMessagedUsers.bind(userController))
+userRouter.get('/getMessagedUsers', authenticateJwt, userController.getMessagedUsers.bind(userController))
 
 export default userRouter; 

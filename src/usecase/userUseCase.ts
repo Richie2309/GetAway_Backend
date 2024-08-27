@@ -331,19 +331,43 @@ export default class UserUseCase implements IUserUseCase {
         }
     }
 
-    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument> {
+    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId: string): Promise<IBookingDocument> {
         try {
-            return await this.userRepo.createBooking(accommodationId, userId, checkIn, checkOut, guests, totalPrice);
+            return await this.userRepo.createBooking(accommodationId, userId, checkIn, checkOut, guests, totalPrice, paymentIntentId);
         } catch (err) {
             throw err;
         }
     }
 
     async createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent> {
+        console.log('hrere goes');
+        
         try {
             return await this._stripeService.createPaymentIntentService(amount)
         } catch (err) {
             throw err;
+        }
+    }
+
+    async cancelBooking(bookingId: string): Promise<IBookingDocument> {
+        try {
+            const booking = await this.userRepo.cancelBooking(bookingId);
+            if (!booking) {
+                console.log(`Booking not found: ${bookingId}`);
+                throw new Error('Booking not found');
+            }
+            try {
+                await this._stripeService.createRefund(booking.paymentIntentId, booking.totalPrice);
+            } catch (refundError) {
+                console.error('Error processing refund:', refundError);
+                // Update booking status to reflect failed refund
+                booking.status = 'Cancelled';
+                await booking.save();
+                throw new Error('Refund failed, but booking has been cancelled');
+            }
+            return booking;
+        } catch (err) {
+            throw err
         }
     }
 
@@ -356,6 +380,7 @@ export default class UserUseCase implements IUserUseCase {
             throw err;
         }
     }
+
 
     async getSchedule(hotelId: string): Promise<IBookingDocument[]> {
         try {

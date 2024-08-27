@@ -293,7 +293,7 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
-    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument> {
+    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number,  paymentIntentId: string): Promise<IBookingDocument> {
         try {
             const newBooking = new this._bookingCollection({
                 accommodation: accommodationId,
@@ -302,11 +302,34 @@ export default class UserRepo implements IUserRepo {
                 checkOutDate: checkOut,
                 guests,
                 totalPrice,
+                paymentIntentId,
                 status: 'Booked',
             });
 
             return await newBooking.save();
         } catch (err) {
+            throw err;
+        }
+    }
+
+    async cancelBooking(bookingId: string): Promise<IBookingDocument> {
+        try {
+            console.log(bookingId,'bokid in repo');
+
+            const booking = await this._bookingCollection.findById(bookingId);
+
+            if (!booking) {
+                throw new Error('Booking not found');
+            }
+
+            booking.status = 'Cancelled';
+            booking.isCancelled = true;
+            booking.cancelledAt = new Date();
+
+            const updatedBooking = await booking.save();
+            return updatedBooking;
+        } catch (err) {
+            console.error('Error cancelling booking in database:', err);
             throw err;
         }
     }
@@ -317,12 +340,15 @@ export default class UserRepo implements IUserRepo {
                 .populate<{ accommodation: IAccommodationDocument }>('accommodation')
                 .exec();
             const accommodationsWithBookingDetails = bookings.map(booking => ({
+                bookingId: booking._id,
                 accommodation: booking.accommodation as IAccommodationDocument,
                 guests: booking.guests,
                 totalPrice: booking.totalPrice,
                 status: booking.status,
                 checkInDate: booking.checkInDate,
                 checkOutDate: booking.checkOutDate,
+                isCancelled: booking.isCancelled,
+                bookedAt: booking.bookedAt
             }));
 
             return accommodationsWithBookingDetails;
@@ -331,6 +357,7 @@ export default class UserRepo implements IUserRepo {
             throw err;
         }
     }
+
 
     async getSchedule(hotelId: string): Promise<IBookingDocument[]> {
         try {
@@ -360,14 +387,14 @@ export default class UserRepo implements IUserRepo {
             }
 
             const unreadEntry = conversation.unreadMessages.find(entry => entry.userId.toString() === senderId);
-        if (unreadEntry) {
-            unreadEntry.count = 0; // Reset unread count for the sender
-            await conversation.save();
-        }
+            if (unreadEntry) {
+                unreadEntry.count = 0; // Reset unread count for the sender
+                await conversation.save();
+            }
 
-             return conversation.messages.length > 0 && 'message' in conversation.messages[0]
-            ? conversation.messages as IMessageDocument[]
-            : [];
+            return conversation.messages.length > 0 && 'message' in conversation.messages[0]
+                ? conversation.messages as IMessageDocument[]
+                : [];
         } catch (err) {
             console.error('Error getting chat details', err);
             throw err;
@@ -419,7 +446,7 @@ export default class UserRepo implements IUserRepo {
             const conversations = await this._conversationCollection.find({
                 participants: hostId
             }).populate('participants', '_id fullName email')
-            
+                .sort({ updatedAt: -1 });
 
             // Extract unique users who are not the host
             const uniqueUsers = new Map();

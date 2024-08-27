@@ -11,7 +11,7 @@ interface IUserController {
     getUserInfo(req: Request, res: Response): Promise<void>;
     googleAuth(req: Request, res: Response): Promise<void>
     handleCheckMail(req: Request, res: Response, next: NextFunction): Promise<void | never>;
-    verifyForgotPasswordOtp (req: Request, res: Response): Promise<void>
+    verifyForgotPasswordOtp(req: Request, res: Response): Promise<void>
     resetPassword(req: Request, res: Response): Promise<void>;
     updateProfile(req: Request, res: Response): Promise<void>;
     updatePassword(req: Request, res: Response): Promise<void>;
@@ -23,8 +23,9 @@ interface IUserController {
     updateHotel(req: Request, res: Response, next: NextFunction): Promise<void | never>;
     getAllHotels(req: Request, res: Response, next: NextFunction): Promise<void | never>;
     checkAvailability(req: Request, res: Response, next: NextFunction): Promise<void>;
-    createBooking(req: Request, res: Response, next: NextFunction): Promise<void>; 
+    createBooking(req: Request, res: Response, next: NextFunction): Promise<void>;
     createPaymentIntent(req: Request, res: Response, next: NextFunction): Promise<void>;
+    cancelBooking(req: Request, res: Response, next: NextFunction): Promise<void>
     getBookedHotels(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never>;
     getSchedule(req: Request, res: Response, next: NextFunction): Promise<void>;
     getToken(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>

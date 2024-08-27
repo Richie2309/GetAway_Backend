@@ -26,9 +26,10 @@ interface IUserUseCase {
     updateHotel(hotelData: IAccommodationDocument): Promise<void | never>;
     getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]>;
     checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
-    createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number): Promise<IBookingDocument>;
+    createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId:string): Promise<IBookingDocument>;
     createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent>;
     getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]>;
+    cancelBooking(bookingId: string): Promise<IBookingDocument>;
     getSchedule(hotelId: string): Promise<IBookingDocument[]>;
     getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[] | null>
     sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument>

@@ -3,7 +3,6 @@ import IUserController, { AuthUserReq, ILoginCredentials, IRegisterCredentials }
 import { StatusCodes } from "../../enums/statusCode.enums";
 import IUserUseCase from "../../interface/usecase/IUserUseCase";
 import { Server as SocketIOServer } from 'socket.io';
-import { IMessageDocument } from "../../interface/collections/IMessage.collections";
 class UserController implements IUserController {
     private userUseCase: IUserUseCase
 
@@ -131,11 +130,7 @@ class UserController implements IUserController {
     async googleAuth(req: Request, res: Response): Promise<void> {
         try {
             const { name, email } = req.body;
-            console.log('name:', name, 'email:', email, 'this is from controler google');
-
             const token = await this.userUseCase.googleAuthUser(name, email);
-            console.log('google auth in controller', email,);
-
             if (token) {
                 res.cookie('token', token, { httpOnly: true })
                 res.status(StatusCodes.Success).json({ token });
@@ -165,12 +160,8 @@ class UserController implements IUserController {
 
     async verifyForgotPasswordOtp(req: Request, res: Response): Promise<void> {
         const { email, otp } = req.body;
-        console.log('email in cont', email);
-
         try {
             const token = await this.userUseCase.verifyForgotPasswordOtp(email, otp)
-            console.log('token in contrlor', token);
-
             res.status(StatusCodes.Success).json({ message: 'OTP verified successfully.', token });
         } catch (err) {
             res.status(StatusCodes.InternalServer).json({ message: 'Internal Server Error' });
@@ -216,17 +207,10 @@ class UserController implements IUserController {
     }
 
     async updateIdentity(req: AuthUserReq, res: Response): Promise<void> {
-        console.log('in controllerfdsfas', req.body);
         try {
             const userId = req.user;
             const { images } = req.body
-
-
-            console.log("length", images.length);
-
             const updatedUser = await this.userUseCase.updateIdentity(userId, images)
-            console.log("contr", updatedUser);
-
             res.status(StatusCodes.Success).json({ user: updatedUser })
         } catch (err) {
             res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
@@ -272,13 +256,8 @@ class UserController implements IUserController {
 
     async getHotelById(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            console.log('dfhi');
             const hotelId = req.params.hotelId;
-            console.log('hotel id in con', hotelId);
-
             const hotel = await this.userUseCase.getHotelById(hotelId);
-            console.log('hotel', hotel);
-
             if (hotel) {
                 res.status(StatusCodes.Success).json({ hotel });
             } else {
@@ -292,8 +271,6 @@ class UserController implements IUserController {
     async updateHotel(req: AuthUserReq, res: Response, next: NextFunction): Promise<void | never> {
         try {
             const hotelData = req.body
-            console.log('hotel data in controller updata', hotelData);
-
             await this.userUseCase.updateHotel(hotelData);
             res.status(StatusCodes.Success).json({ message: 'Hotel updated successfully' });
         } catch (err) {
@@ -304,15 +281,12 @@ class UserController implements IUserController {
     async getAllHotels(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
             const { destination, checkIn, checkOut, guests } = req.query;
-            console.log('search parameters in controller:', { destination, checkIn, checkOut, guests });
             const allHotels = await this.userUseCase.getAllHotels(
                 destination as string,
                 checkIn ? new Date(checkIn as string) : undefined,
                 checkOut ? new Date(checkOut as string) : undefined,
                 guests ? parseInt(guests as string, 10) : undefined
             );
-            console.log('all hotels in controller:', allHotels);
-
             res.status(StatusCodes.Success).json({ allHotels });
         } catch (err) {
             next(err);
@@ -323,8 +297,6 @@ class UserController implements IUserController {
         try {
             const { accommodationId, checkIn, checkOut } = req.query;
             const isAvailable = await this.userUseCase.checkAvailability(accommodationId as string, new Date(checkIn as string), new Date(checkOut as string));
-            console.log('isavailable', isAvailable);
-
             res.status(StatusCodes.Success).json({ isAvailable });
         } catch (err) {
             next(err);
@@ -332,15 +304,14 @@ class UserController implements IUserController {
     }
 
     async createBooking(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
-        const { accommodationId, checkIn, checkOut, guests, totalPrice } = req.body;
+        const { accommodationId, checkIn, checkOut, guests, totalPrice, paymentIntentId } = req.body;
         const userId = req.user
-
         try {
             if (!userId) {
                 res.status(StatusCodes.Unauthorized).json({ error: 'User not authenticated' });
                 return;
             }
-            const booking = await this.userUseCase.createBooking(accommodationId, userId, new Date(checkIn), new Date(checkOut), guests, totalPrice);
+            const booking = await this.userUseCase.createBooking(accommodationId, userId, new Date(checkIn), new Date(checkOut), guests, totalPrice, paymentIntentId);
 
             res.status(StatusCodes.Success).json({ booking });
         } catch (err) {
@@ -350,15 +321,21 @@ class UserController implements IUserController {
 
     async createPaymentIntent(req: Request, res: Response, next: NextFunction): Promise<void> {
         const { amount } = req.body;
-        console.log('ho');
-
         try {
-            console.log('amount', amount);
-
             const paymentIntent = await this.userUseCase.createPaymentIntent(amount);
-            console.log('paymentin', paymentIntent);
+            res.status(StatusCodes.Success).json({ clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
+        } catch (err) {
+            next(err);
+        }
+    }
 
-            res.status(StatusCodes.Success).json({ clientSecret: paymentIntent.client_secret });
+    async cancelBooking(req: Request, res: Response, next: NextFunction): Promise<void> {
+        const { bookingId } = req.params;
+        try {
+            const result = await this.userUseCase.cancelBooking(bookingId);
+            console.log('result in controller',result);
+            
+            res.status(StatusCodes.Success).json(result);
         } catch (err) {
             next(err);
         }
