@@ -18,4 +18,16 @@ export default class CloudinaryService implements ICloudinaryService {
       throw err
     }
   }
+
+  async uploadData(mediaDataBase64: string, resourceType: 'image' | 'video' | 'raw' | 'auto'): Promise<string | never> {
+    try {
+      const uploadApiResponse: cloudinary.UploadApiResponse = await cloudinary.v2.uploader.upload(mediaDataBase64, {
+        folder: 'GetAway',
+        resource_type: resourceType
+      })
+      return uploadApiResponse.secure_url
+    } catch (err) {
+      throw err
+    }
+  }
 }

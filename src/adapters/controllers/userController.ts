@@ -384,8 +384,8 @@ class UserController implements IUserController {
     async sendMessage(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
         try {
             const senderId = req.user!
-            const { receiverId, message } = req.body;
-            const newMessage = await this.userUseCase.sendMessage(senderId, receiverId, message)
+            const { receiverId, message, type } = req.body;
+            const newMessage = await this.userUseCase.sendMessage(senderId, receiverId, message, type)
             res.status(StatusCodes.Success).json(newMessage)
         } catch (err) {
             next(err)

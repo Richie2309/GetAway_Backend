@@ -13,6 +13,11 @@ const messageSchema = new Schema({
   message: {
     type: String,
     require: true
+  },
+  type: {
+    type: String,
+    enum: ['text', 'image', 'video', 'audio', 'file'],
+    default: 'text'
   }
 }, { timestamps: true })
 

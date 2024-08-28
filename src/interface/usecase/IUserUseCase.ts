@@ -32,7 +32,7 @@ interface IUserUseCase {
     cancelBooking(bookingId: string): Promise<IBookingDocument>;
     getSchedule(hotelId: string): Promise<IBookingDocument[]>;
     getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[] | null>
-    sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument>
+    sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument>
     getMessagedUsers(hostId: string): Promise<IUserDocument[]|null>
 }
 

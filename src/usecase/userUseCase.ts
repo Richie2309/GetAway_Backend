@@ -257,8 +257,6 @@ export default class UserUseCase implements IUserUseCase {
                 images.map((image) => this._cloudinaryService.uploadImage(image))
             )
             images = uploadImages
-            console.log("in usecase", images);
-
             return await this.userRepo.updateIdentity(userId, images);
         } catch (error) {
             console.error('Error updating identity:', error);
@@ -341,7 +339,7 @@ export default class UserUseCase implements IUserUseCase {
 
     async createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent> {
         console.log('hrere goes');
-        
+
         try {
             return await this._stripeService.createPaymentIntentService(amount)
         } catch (err) {
@@ -403,11 +401,20 @@ export default class UserUseCase implements IUserUseCase {
         }
     }
 
-    async sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument> {
+    async sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument> {
         try {
+            console.log(message, type);
+            
             if (!senderId) throw new Error("senderId ID is required");
             if (!receiverId) throw new Error("receiverId ID is required");
-            const newMessage = await this.userRepo.sendMessage(senderId, receiverId, message);
+
+            let mediaUrl = message
+            if (type !== 'text') {
+                const resourceType = type === 'video' ? 'video' : 'image';
+                mediaUrl = await this._cloudinaryService.uploadData(message,resourceType)
+            }
+
+            const newMessage = await this.userRepo.sendMessage(senderId, receiverId, mediaUrl, type);
             const checkId = getRecieverId(receiverId)
 
             if (checkId) {

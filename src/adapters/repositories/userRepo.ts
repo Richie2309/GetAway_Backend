@@ -401,7 +401,7 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
-    async sendMessage(senderId: string, receiverId: string, message: string): Promise<IMessageDocument> {
+    async sendMessage(senderId: string, receiverId: string, message: string, type:string): Promise<IMessageDocument> {
         try {
             let conversation = await this._conversationCollection.findOne({
                 participants: { $all: [senderId, receiverId] }
@@ -418,7 +418,8 @@ export default class UserRepo implements IUserRepo {
             const newMessage = await this._messageCollection.create({
                 senderId,
                 receiverId,
-                message
+                message, 
+                type
             });
 
             conversation.messages.push(newMessage.id);
