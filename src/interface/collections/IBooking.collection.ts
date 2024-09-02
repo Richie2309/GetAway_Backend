@@ -10,7 +10,7 @@ export interface IBookingDocument extends Document {
   guests: number;
   paymentIntentId: string;
   totalPrice: number;
-  status: 'Booked' | 'Pending' | 'Cancelled';
+  status: 'Booked' | 'Completed' | 'Cancelled';
   bookedAt: Date;
   isCancelled: boolean;
   refundStatus:'Not Applicable'| 'Pending'| 'Completed',

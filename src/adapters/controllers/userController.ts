@@ -333,8 +333,8 @@ class UserController implements IUserController {
         const { bookingId } = req.params;
         try {
             const result = await this.userUseCase.cancelBooking(bookingId);
-            console.log('result in controller',result);
-            
+            console.log('result in controller', result);
+
             res.status(StatusCodes.Success).json(result);
         } catch (err) {
             next(err);
@@ -402,6 +402,45 @@ class UserController implements IUserController {
         }
     }
 
+    async getReviews(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { accommodationId } = req.params;
+            const reviews = await this.userUseCase.getReviews(accommodationId)
+            res.status(StatusCodes.Success).json(reviews);
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async canUserReview(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user!
+            const { accommodationId } = req.params;
+            const canReview = await this.userUseCase.canUserReview(userId, accommodationId)
+            res.status(StatusCodes.Success).json({ canReview });
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async addReview(req: AuthUserReq, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user!
+            const { accommodationId } = req.params;
+            const { rating, comment } = req.body;
+
+            const reviewData = {
+                accommodation: accommodationId,
+                user: userId,
+                rating,
+                comment,
+            };
+            const review = await this.userUseCase.addReview(reviewData as any);            
+            res.status(StatusCodes.Success).json(review);
+        } catch (err) {
+            next(err)
+        }
+    }
 }
 
 export default UserController

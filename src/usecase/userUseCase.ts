@@ -18,6 +18,7 @@ import Stripe from "stripe";
 import { IMessageDocument } from "../interface/collections/IMessage.collections";
 import { io } from "../server";
 import { getRecieverId } from "../frameworks/config/socketHandlers";
+import { IReviewDocument } from "../interface/collections/IReview.collections";
 
 export default class UserUseCase implements IUserUseCase {
     private userRepo: IUserRepo
@@ -211,8 +212,6 @@ export default class UserUseCase implements IUserUseCase {
 
     async verifyForgotPasswordOtp(email: string, otp: string): Promise<string> {
         const otpData: IOtpDocument | null = await this.userRepo.getOtpByEmail(email);
-        console.log('in repo verforpas');
-
         if (!email) {
             throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' })
         } else if (!otpData) {
@@ -404,14 +403,14 @@ export default class UserUseCase implements IUserUseCase {
     async sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument> {
         try {
             console.log(message, type);
-            
+
             if (!senderId) throw new Error("senderId ID is required");
             if (!receiverId) throw new Error("receiverId ID is required");
 
             let mediaUrl = message
             if (type !== 'text') {
                 const resourceType = type === 'video' ? 'video' : 'image';
-                mediaUrl = await this._cloudinaryService.uploadData(message,resourceType)
+                mediaUrl = await this._cloudinaryService.uploadData(message, resourceType)
             }
 
             const newMessage = await this.userRepo.sendMessage(senderId, receiverId, mediaUrl, type);
@@ -433,6 +432,35 @@ export default class UserUseCase implements IUserUseCase {
             return await this.userRepo.getMessagedUsers(hostId)
         } catch (err) {
             console.error('Error getting messages users', err);
+            throw err;
+        }
+    }
+
+    async getReviews(accommodationId: string): Promise<IReviewDocument[]> {
+        try {
+            return await this.userRepo.getReviews(accommodationId)
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async canUserReview(userId: string, accommodationId: string): Promise<boolean> {
+        try {
+            const completedBooking = await this.userRepo.canUserReview(userId, accommodationId)
+            return !!completedBooking
+        } catch (err) {
+            console.error('Error getting details', err);
+            throw err;
+        }
+    }
+
+    async addReview(reviewData: IReviewDocument): Promise<IReviewDocument> {
+        try {
+            const res= this.userRepo.addReview(reviewData);
+            return res
+            
+        } catch (err) {
+            console.error('Error getting details', err);
             throw err;
         }
     }

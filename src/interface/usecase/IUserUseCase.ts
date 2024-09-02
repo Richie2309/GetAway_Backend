@@ -4,6 +4,7 @@ import { IAccommodationDocument } from "../collections/IAccommodations.collectio
 import { IAccommodationWithBookingDetails, IBookingDocument, IPaymentIntent } from "../collections/IBooking.collection";
 import Stripe from "stripe";
 import { IMessageDocument } from "../collections/IMessage.collections";
+import { IReviewDocument } from "../collections/IReview.collections";
 
 interface IUserUseCase {
     authenticateUser(email: string, password: string): Promise<loginRes | never>;
@@ -34,6 +35,10 @@ interface IUserUseCase {
     getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[] | null>
     sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument>
     getMessagedUsers(hostId: string): Promise<IUserDocument[]|null>
+    getReviews(accommodationId: string): Promise<IReviewDocument[]|null>
+    canUserReview(userId:string,accommodationId:string):Promise<boolean>
+    addReview(reviewData:IReviewDocument):Promise<IReviewDocument>
+    
 }
 
 export default IUserUseCase

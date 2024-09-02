@@ -45,11 +45,12 @@ import Accommodations from '../models/accommodationSchema';
 import Bookings from '../models/bookingSchema';
 import Message from '../models/messageSchema';
 import Conversation from '../models/conversationSchema';
+import Review from '../models/reviewSchema';
 import { io } from '../../server';
 
 const userRouter = express.Router();
 
-const userRepo: IUserRepo = new UserRepo(Users, Otp, Accommodations, Bookings, Conversation, Message)
+const userRepo: IUserRepo = new UserRepo(Users, Otp, Accommodations, Bookings, Conversation, Message, Review)
 const hashingService: IHashingService = new HashingService()
 const emailService: IEmailService = new EmailService()
 const otpService: IOtpService = new OtpService()
@@ -116,5 +117,11 @@ userRouter.get('/getMessage/:receiverId', authenticateJwt, userController.getMes
 userRouter.post('/sendMessage', authenticateJwt, userController.sendMessage.bind(userController))
 
 userRouter.get('/getMessagedUsers', authenticateJwt, userController.getMessagedUsers.bind(userController))
+
+userRouter.get('/getReviews/:accommodationId', userController.getReviews.bind(userController))
+
+userRouter.get('/checkIfUserCanReview/:accommodationId', authenticateJwt, userController.canUserReview.bind(userController))
+
+userRouter.post('/addReview/:accommodationId', authenticateJwt, userController.addReview.bind(userController))
 
 export default userRouter; 

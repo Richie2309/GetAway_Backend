@@ -1,8 +1,8 @@
 import { IAccommodationDocument } from "../collections/IAccommodations.collection";
 import { IAccommodationWithBookingDetails, IBookingDocument } from "../collections/IBooking.collection";
-import { IConversationDocument } from "../collections/IConversation.collections";
 import { IMessageDocument } from "../collections/IMessage.collections";
 import { IOtpDocument } from "../collections/IOtp.collections";
+import { IReviewCollection, IReviewDocument } from "../collections/IReview.collections";
 import { IUserDocument } from "../collections/IUsers.collection"
 import { IRegisterCredentials } from "../controllers/IUserController"
 
@@ -25,13 +25,17 @@ interface IUserRepo {
      getAccommodationsByUserId(userId: string): Promise<IAccommodationDocument[]>;
      getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]>;
      checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
-     createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number,  paymentIntentId: string): Promise<IBookingDocument>
+     createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId: string): Promise<IBookingDocument>
      getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]>;
      cancelBooking(bookingId: string): Promise<IBookingDocument>;
+     // updateBookingStatus():Promise<void>
      getSchedule(hotelId: string): Promise<IBookingDocument[]>;
      getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]>
-     sendMessage(senderId: string, receiverId: string, message: string, type:string): Promise<IMessageDocument>
+     sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument>
      getMessagedUsers(hostId: string): Promise<IUserDocument[] | null>
+     getReviews(accommodationId: string): Promise<IReviewDocument[]>
+     canUserReview(userId: string, accommodationId: string): Promise<boolean | void>
+     addReview(reviewData: IReviewDocument): Promise<IReviewDocument>
 }
 
 export default IUserRepo

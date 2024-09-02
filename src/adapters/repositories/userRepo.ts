@@ -3,6 +3,7 @@ import { IAccommodationWithBookingDetails, IBookingCollection, IBookingDocument 
 import { IConversationCollection } from "../../interface/collections/IConversation.collections";
 import { IMessageCollection, IMessageDocument } from "../../interface/collections/IMessage.collections";
 import { IOtpCollection, IOtpDocument } from "../../interface/collections/IOtp.collections";
+import { IReviewCollection, IReviewDocument } from "../../interface/collections/IReview.collections";
 import { IUserDocument, IUsersCollection } from "../../interface/collections/IUsers.collection";
 import { IRegisterCredentials } from "../../interface/controllers/IUserController";
 import IUserRepo from "../../interface/repositories/IUserRepo";
@@ -14,14 +15,16 @@ export default class UserRepo implements IUserRepo {
     private _bookingCollection: IBookingCollection
     private _conversationCollection: IConversationCollection
     private _messageCollection: IMessageCollection
+    private _reviewCollection: IReviewCollection
 
-    constructor(userCollection: IUsersCollection, otpCollection: IOtpCollection, accommodationColletion: IAccommodationCollection, bookingCollection: IBookingCollection, conversationCollection: IConversationCollection, messageCollection: IMessageCollection) {
+    constructor(userCollection: IUsersCollection, otpCollection: IOtpCollection, accommodationColletion: IAccommodationCollection, bookingCollection: IBookingCollection, conversationCollection: IConversationCollection, messageCollection: IMessageCollection, reviewCollection: IReviewCollection) {
         this.userCollection = userCollection
         this.otpCollection = otpCollection
         this._accommodationCollection = accommodationColletion
         this._bookingCollection = bookingCollection
         this._conversationCollection = conversationCollection
         this._messageCollection = messageCollection
+        this._reviewCollection = reviewCollection
     }
 
     async getDataByEmail(email: string): Promise<IUserDocument | null> {
@@ -293,7 +296,7 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
-    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number,  paymentIntentId: string): Promise<IBookingDocument> {
+    async createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId: string): Promise<IBookingDocument> {
         try {
             const newBooking = new this._bookingCollection({
                 accommodation: accommodationId,
@@ -314,7 +317,7 @@ export default class UserRepo implements IUserRepo {
 
     async cancelBooking(bookingId: string): Promise<IBookingDocument> {
         try {
-            console.log(bookingId,'bokid in repo');
+            console.log(bookingId, 'bokid in repo');
 
             const booking = await this._bookingCollection.findById(bookingId);
 
@@ -333,6 +336,21 @@ export default class UserRepo implements IUserRepo {
             throw err;
         }
     }
+
+    // async updateBookingStatus(): Promise<void> {
+    //     try {
+    //         const now = new Date();
+    //         await this._bookingCollection.updateMany(
+    //             { 
+    //                 checkOutDate: { $lt: now }, 
+    //                 status: 'Booked' 
+    //             },
+    //             { $set: { status: 'Completed' } }
+    //         );
+    //     } catch (err) {
+    //         throw err;
+    //     }
+    // }
 
     async getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]> {
         try {
@@ -371,7 +389,6 @@ export default class UserRepo implements IUserRepo {
 
     async getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]> {
         try {
-
             const conversation = await this._conversationCollection
                 .findOne({
                     participants: { $all: [senderId, receiverId] }
@@ -401,7 +418,7 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
-    async sendMessage(senderId: string, receiverId: string, message: string, type:string): Promise<IMessageDocument> {
+    async sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument> {
         try {
             let conversation = await this._conversationCollection.findOne({
                 participants: { $all: [senderId, receiverId] }
@@ -418,7 +435,7 @@ export default class UserRepo implements IUserRepo {
             const newMessage = await this._messageCollection.create({
                 senderId,
                 receiverId,
-                message, 
+                message,
                 type
             });
 
@@ -467,11 +484,56 @@ export default class UserRepo implements IUserRepo {
                 });
             });
 
-            // // Convert the Map values to an array
             return Array.from(uniqueUsers.values());
         } catch (err) {
             console.error('Error getting messaged users', err);
             throw err;
+        }
+    }
+
+    async getReviews(accommodationId: string): Promise<IReviewDocument[]> {
+        try {
+            const reviews = await this._reviewCollection.find({ accommodation: accommodationId }).populate('user', 'fullName').sort({ createdAt: -1 })
+            return reviews
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async canUserReview(userId: string, accommodationId: string): Promise<boolean | void> {
+        try {
+            const bookingStatus = await this._bookingCollection.findOne({
+                user: userId,
+                accommodation: accommodationId,
+                status: 'Completed'
+            })
+            if (!bookingStatus) {
+                return false;
+            }
+            const existingReview = await this._reviewCollection.findOne({
+                user: userId,
+                accommodation: accommodationId
+            });
+
+            return !existingReview;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async addReview(reviewData: IReviewDocument): Promise<IReviewDocument> {
+        try {
+            const existingReview = await this._reviewCollection.findOne({
+                user: reviewData.user,
+                accommodation: reviewData.accommodation
+            });
+            if (existingReview) {
+                throw new Error('User has already posted a review for this accommodation.');
+            }
+            const review = new this._reviewCollection(reviewData)          
+            return await review.save()
+        } catch (err) {
+            throw err
         }
     }
 }

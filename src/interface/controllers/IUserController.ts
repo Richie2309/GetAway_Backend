@@ -32,6 +32,9 @@ interface IUserController {
     getMessages(req: Request, res: Response, next: NextFunction): Promise<void>;
     sendMessage(req: Request, res: Response, next: NextFunction): Promise<void>;
     getMessagedUsers(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
+    getReviews(req: Request, res: Response, next: NextFunction): Promise<void>
+    canUserReview(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
+    addReview(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
 }
 
 export interface IRegisterCredentials {
