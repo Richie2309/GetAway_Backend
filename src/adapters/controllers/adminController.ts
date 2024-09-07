@@ -73,11 +73,11 @@ export default class AdminController implements IAdminController {
         const { hotelId } = req.params;
 
         try {
-          await this._adminUseCase.approveHotel(hotelId);
-          res.status(StatusCodes.Success).json({ message: 'Hotel approved successfully' });
+            await this._adminUseCase.approveHotel(hotelId);
+            res.status(StatusCodes.Success).json({ message: 'Hotel approved successfully' });
         } catch (err) {
             res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
-        }  
+        }
     }
 
     async rejectHotel(req: Request, res: Response): Promise<void> {
@@ -87,6 +87,33 @@ export default class AdminController implements IAdminController {
             res.status(StatusCodes.Success).json({ message: 'Hotel rejected successfully' });
         } catch (err) {
             res.status(StatusCodes.InternalServer).json({ message: 'Error rejecting hotel', err });
+        }
+    }
+
+    async getDailySales(req: Request, res: Response) {
+        try {
+            const data = await this._adminUseCase.executeDaily();
+            res.json(data);
+        } catch (error) {
+            res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
+        }
+    }
+
+    async getWeeklySales(req: Request, res: Response) {
+        try {
+            const data = await this._adminUseCase.executeWeekly();
+            res.json(data);
+        } catch (error) {
+            res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
+        }
+    }
+
+    async getMonthlySales(req: Request, res: Response) {
+        try {
+            const data = await this._adminUseCase.executeMonthly();
+            res.json(data);
+        } catch (error) {
+            res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
         }
     }
 }

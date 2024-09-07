@@ -6,12 +6,13 @@ import AdminController from '../../adapters/controllers/adminController';
 import JwtService from '../utils/jwtService.utils';
 import Users from '../models/userSchema';
 import Accommodations from '../models/accommodationSchema';
+import Bookings from '../models/bookingSchema';
 
 const adminRouter = express.Router();
 
-const adminRepo = new AdminRepo(Users,Accommodations)
+const adminRepo = new AdminRepo(Users, Accommodations, Bookings)
 const jwtService = new JwtService();
-const adminUseCase = new AdminUseCase(adminRepo,jwtService)
+const adminUseCase = new AdminUseCase(adminRepo, jwtService)
 const adminController = new AdminController(adminUseCase)
 
 adminRouter.post('/login', adminController.adminLogin.bind(adminController))
@@ -27,5 +28,11 @@ adminRouter.get('/getHotelById/:hotelId', adminController.getHotelById.bind(admi
 adminRouter.post('/approve-hotel/:hotelId', adminController.approveHotel.bind(adminController));
 
 adminRouter.patch('/reject-hotel/:hotelId', adminController.rejectHotel.bind(adminController))
+
+adminRouter.get('/sales/daily', adminController.getDailySales.bind(adminController))
+
+adminRouter.get('/sales/weekly', adminController.getWeeklySales.bind(adminController))
+
+adminRouter.get('/sales/monthly', adminController.getMonthlySales.bind(adminController))
 
 export default adminRouter;  

@@ -1,14 +1,17 @@
 import { IAccommodationCollection, IAccommodationDocument } from "../../interface/collections/IAccommodations.collection";
+import { IBookingCollection } from "../../interface/collections/IBooking.collection";
 import { IUserDocument, IUsersCollection } from "../../interface/collections/IUsers.collection";
 import IAdminRepo from "../../interface/repositories/IAdminRepo";
 
 export default class AdminRepo implements IAdminRepo {
   private _userCollection: IUsersCollection;
   private _accommodationCollection: IAccommodationCollection;
+  private _bookingCollection: IBookingCollection
 
-  constructor(userCollection: IUsersCollection, accommodationCollection: IAccommodationCollection) {
+  constructor(userCollection: IUsersCollection, accommodationCollection: IAccommodationCollection, bookingCollection: IBookingCollection) {
     this._userCollection = userCollection;
     this._accommodationCollection = accommodationCollection;
+    this._bookingCollection = bookingCollection
   }
 
   async getAllUsers(): Promise<IUserDocument[]> {
@@ -56,5 +59,70 @@ export default class AdminRepo implements IAdminRepo {
       isverified: false,
       rejectionReason: reason
     });
+  }
+
+  async getTotalSales(): Promise<number> {
+    const result = await this._bookingCollection.aggregate([
+      { $match: { status: 'Completed' } },
+      { $group: { _id: null, totalSales: { $sum: "$totalPrice" } } }
+    ]);
+    return result[0]?.totalSales || 0;
+  }
+
+  async getSalesByDay(): Promise<{ date: string, totalSales: number }[]> {
+    const result = await this._bookingCollection.aggregate([
+      { $match: { 
+        status: 'Completed',
+        bookedAt: { 
+          $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+        }
+      }},
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$bookedAt" } },
+          totalSales: { $sum: "$totalPrice" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+    return result.map(item => ({
+      date: item._id,
+      totalSales: item.totalSales
+    }));
+  }
+
+  async getSalesByWeek(): Promise<{ week: string, totalSales: number }[]> {
+    const result = await this._bookingCollection.aggregate([
+      { $match: { status: 'Completed' } },
+      {
+        $group: {
+          _id: { $isoWeek: "$bookedAt" },
+          totalSales: { $sum: "$totalPrice" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+    return result.map(item => ({
+      week: `W${item._id}`,
+      totalSales: item.totalSales
+    }));
+  }
+
+  async getSalesByMonth(): Promise<{ month: string, totalSales: number }[]> {
+    const result = await this._bookingCollection.aggregate([
+      { $match: { status: 'Completed' } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$bookedAt" } },
+          totalSales: { $sum: "$totalPrice" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+    return result.map(item => ({
+      month: item._id,
+      totalSales: item.totalSales
+    }));
   }
 }

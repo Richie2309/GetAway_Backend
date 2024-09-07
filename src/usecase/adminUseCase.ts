@@ -74,4 +74,29 @@ export default class AdminUseCase implements IAdminUseCase {
         await this._adminRepo.rejectHotel(hotelId, reason);
     }
 
+    async executeDaily(): Promise<{ date: string; totalSales: number; }[]> {
+        try {
+           return await this._adminRepo.getSalesByDay()
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async executeWeekly(): Promise<{ week: string; totalSales: number; }[]> {
+        try {
+            return await this._adminRepo.getSalesByWeek(); 
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async executeMonthly(): Promise<{ month: string; totalSales: number; }[]> {
+        try {
+            return await this._adminRepo.getSalesByMonth()
+        } catch (err) {
+            throw err
+        }
+    }
+
+
 }

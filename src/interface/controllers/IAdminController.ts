@@ -8,6 +8,9 @@ interface IAdminController {
     getHotelById(req: Request, res: Response): Promise<void>;
     approveHotel(req: Request, res: Response): Promise<void>
     rejectHotel(req: Request, res: Response): Promise<void>
+    getDailySales(req: Request, res: Response): Promise<void>;
+    getWeeklySales(req: Request, res: Response): Promise<void>;
+    getMonthlySales(req: Request, res: Response): Promise<void>;
 }
 
 export default IAdminController
