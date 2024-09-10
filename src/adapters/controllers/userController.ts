@@ -435,8 +435,17 @@ class UserController implements IUserController {
                 rating,
                 comment,
             };
-            const review = await this.userUseCase.addReview(reviewData as any);            
+            const review = await this.userUseCase.addReview(reviewData as any);
             res.status(StatusCodes.Success).json(review);
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    async getTopThreeAccommodations(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const topAccommodations = await this.userUseCase.getTopThreeAccommodations();
+            res.status(StatusCodes.Success).json(topAccommodations);
         } catch (err) {
             next(err)
         }

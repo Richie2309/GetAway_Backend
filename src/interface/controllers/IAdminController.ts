@@ -11,6 +11,7 @@ interface IAdminController {
     getDailySales(req: Request, res: Response): Promise<void>;
     getWeeklySales(req: Request, res: Response): Promise<void>;
     getMonthlySales(req: Request, res: Response): Promise<void>;
+    getDashboardStats(req: Request, res: Response): Promise<void>;
 }
 
 export default IAdminController

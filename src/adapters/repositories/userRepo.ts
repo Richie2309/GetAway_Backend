@@ -530,10 +530,31 @@ export default class UserRepo implements IUserRepo {
             if (existingReview) {
                 throw new Error('User has already posted a review for this accommodation.');
             }
-            const review = new this._reviewCollection(reviewData)          
+            const review = new this._reviewCollection(reviewData)
             return await review.save()
         } catch (err) {
             throw err
         }
+    }
+
+    async getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void> {
+        const topAccommodations = await this._bookingCollection.aggregate([
+            { $match: { status: { $in: ["Booked", "Completed"] } } }, // Filter bookings by status
+            { $group: { _id: "$accommodation", count: { $sum: 1 } } }, // Group by accommodation and count
+            { $sort: { count: -1 } }, // Sort by booking count (descending)
+            { $limit: 3 }, // Limit to top 3
+            {
+              $lookup: {
+                from: "accommodations", // Reference the accommodation collection
+                localField: "_id",
+                foreignField: "_id",
+                as: "accommodationDetails"
+              }
+            },
+            { $unwind: "$accommodationDetails" }, // Unwind the accommodation details
+            { $project: { accommodationDetails: 1 } } // Project only the accommodation details
+          ]);
+      
+          return topAccommodations.map(item => item.accommodationDetails);  
     }
 }

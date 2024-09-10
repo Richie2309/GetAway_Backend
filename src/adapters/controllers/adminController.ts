@@ -116,4 +116,13 @@ export default class AdminController implements IAdminController {
             res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
         }
     }
+
+    async getDashboardStats(req: Request, res: Response): Promise<void> {
+        try {
+            const stats = await this._adminUseCase.dashBoardDeatail();
+            res.json(stats);
+          } catch (error) {
+            res.status(StatusCodes.Unauthorized).json({ message: 'Error fetching dashboard stats' });
+          }
+    }
 }

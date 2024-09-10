@@ -36,6 +36,7 @@ interface IUserRepo {
      getReviews(accommodationId: string): Promise<IReviewDocument[]>
      canUserReview(userId: string, accommodationId: string): Promise<boolean | void>
      addReview(reviewData: IReviewDocument): Promise<IReviewDocument>
+     getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void>
 }
 
 export default IUserRepo

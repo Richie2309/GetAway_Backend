@@ -38,7 +38,7 @@ interface IUserUseCase {
     getReviews(accommodationId: string): Promise<IReviewDocument[]|null>
     canUserReview(userId:string,accommodationId:string):Promise<boolean>
     addReview(reviewData:IReviewDocument):Promise<IReviewDocument>
-    
+    getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void>
 }
 
 export default IUserUseCase

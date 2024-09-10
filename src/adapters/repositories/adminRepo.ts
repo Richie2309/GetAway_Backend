@@ -71,13 +71,15 @@ export default class AdminRepo implements IAdminRepo {
 
   async getSalesByDay(): Promise<{ date: string, totalSales: number }[]> {
     const result = await this._bookingCollection.aggregate([
-      { $match: { 
-        status: 'Completed',
-        bookedAt: { 
-          $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-          $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+      {
+        $match: {
+          status: 'Completed',
+          bookedAt: {
+            $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+            $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+          }
         }
-      }},
+      },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$bookedAt" } },
@@ -125,4 +127,22 @@ export default class AdminRepo implements IAdminRepo {
       totalSales: item.totalSales
     }));
   }
+
+  async getTotalUsers(): Promise<number> {
+    return await this._userCollection.countDocuments()
+  }
+
+  async getTotalAccommodations(): Promise<number> {
+    return await this._accommodationCollection.countDocuments()
+  }
+
+  async getTotalProfit(): Promise<number> {
+    const bookings = await this._bookingCollection.aggregate([
+      { $match: { status: 'Completed' } },
+      { $group: { _id: null, totalProfit: { $sum: "$totalPrice" } } }
+    ]);
+      return bookings.length > 0 ? bookings[0].totalProfit : 0;
+  }
+  
+
 }

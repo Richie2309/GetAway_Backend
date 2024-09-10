@@ -35,4 +35,6 @@ adminRouter.get('/sales/weekly', adminController.getWeeklySales.bind(adminContro
 
 adminRouter.get('/sales/monthly', adminController.getMonthlySales.bind(adminController))
 
+adminRouter.get('/dashboard-stats', adminController.getDashboardStats.bind(adminController));
+
 export default adminRouter;  

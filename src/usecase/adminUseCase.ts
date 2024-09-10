@@ -76,7 +76,7 @@ export default class AdminUseCase implements IAdminUseCase {
 
     async executeDaily(): Promise<{ date: string; totalSales: number; }[]> {
         try {
-           return await this._adminRepo.getSalesByDay()
+            return await this._adminRepo.getSalesByDay()
         } catch (err) {
             throw err
         }
@@ -84,7 +84,7 @@ export default class AdminUseCase implements IAdminUseCase {
 
     async executeWeekly(): Promise<{ week: string; totalSales: number; }[]> {
         try {
-            return await this._adminRepo.getSalesByWeek(); 
+            return await this._adminRepo.getSalesByWeek();
         } catch (err) {
             throw err
         }
@@ -98,5 +98,17 @@ export default class AdminUseCase implements IAdminUseCase {
         }
     }
 
+    async dashBoardDeatail(): Promise<{ totalUsers: number; totalAccommodations: number; totalProfit: number; }> {
+        try {            
+            const totalUsers = await this._adminRepo.getTotalUsers();
+            const totalAccommodations = await this._adminRepo.getTotalAccommodations();
+            const totalProfit = await this._adminRepo.getTotalProfit();   
+            console.log(totalProfit);
+                    
+            return { totalUsers, totalAccommodations, totalProfit };
+        } catch (err) {
+            throw err
+        }
+    }
 
 }

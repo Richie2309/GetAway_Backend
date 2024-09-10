@@ -124,4 +124,6 @@ userRouter.get('/checkIfUserCanReview/:accommodationId', authenticateJwt, userCo
 
 userRouter.post('/addReview/:accommodationId', authenticateJwt, userController.addReview.bind(userController))
 
+userRouter.get('/top-three', userController.getTopThreeAccommodations.bind(userController))
+
 export default userRouter; 

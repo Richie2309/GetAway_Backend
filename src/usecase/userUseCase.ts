@@ -337,8 +337,6 @@ export default class UserUseCase implements IUserUseCase {
     }
 
     async createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent> {
-        console.log('hrere goes');
-
         try {
             return await this._stripeService.createPaymentIntentService(amount)
         } catch (err) {
@@ -456,11 +454,20 @@ export default class UserUseCase implements IUserUseCase {
 
     async addReview(reviewData: IReviewDocument): Promise<IReviewDocument> {
         try {
-            const res= this.userRepo.addReview(reviewData);
+            const res = this.userRepo.addReview(reviewData);
             return res
-            
+
         } catch (err) {
             console.error('Error getting details', err);
+            throw err;
+        }
+    }
+
+    async getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void> {
+        try {
+            const topAccommodations = await this.userRepo.getTopThreeAccommodations();
+            return topAccommodations;
+        } catch (err) {
             throw err;
         }
     }

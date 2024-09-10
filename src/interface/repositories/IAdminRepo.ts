@@ -12,6 +12,9 @@ interface IAdminRepo {
   getSalesByDay(): Promise<{ date: string, totalSales: number }[]>;
   getSalesByWeek(): Promise<{ week: string, totalSales: number }[]>;
   getSalesByMonth(): Promise<{ month: string, totalSales: number }[]>;
+  getTotalUsers(): Promise<number>;
+  getTotalAccommodations(): Promise<number>;
+  getTotalProfit(): Promise<number>;
 }
 
 export default IAdminRepo
