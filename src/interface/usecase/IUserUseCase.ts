@@ -46,6 +46,6 @@ export default IUserUseCase
  
 export interface loginRes {
     token: string,
-    // refreshToken:string,
+    refreshToken:string,
     userData: IUserDocument 
 } 

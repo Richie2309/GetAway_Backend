@@ -70,23 +70,13 @@ class UserController implements IUserController {
             const { email, password }: ILoginCredentials = req.body;
             const response = await this.userUseCase.authenticateUser(email, password);
             const token: string = response.token
-            // const refreshToken: string = response.refreshToken
-            const userData = response.userData
+            const refreshToken: string = response.refreshToken
+            const userData = response.userData;
 
-            // res.cookie('refreshToken', refreshToken, {
-            //     httpOnly: true,
-            //     secure: true, // Use secure cookies in production (HTTPS)
-            //     sameSite: 'strict',
-            //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-            // });
-            // // Send access token to frontend
-            // res.status(StatusCodes.Success).json({
-            //     message: 'Login successful',
-            //     token,
-            //     userData,
-            // });
+            res.cookie('token', token, { httpOnly: true , maxAge: 15 * 60 * 60});
 
-            res.cookie('token', token, { httpOnly: true });
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 60 });
+
             res.status(StatusCodes.Success).json({
                 message: "Successfuly login",
                 userData:userData
@@ -115,6 +105,7 @@ class UserController implements IUserController {
     async handleLogout(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
             res.cookie('token', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
+            res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
             res.status(StatusCodes.Success).json({
                 message: "User Logout sucessfull"
             });

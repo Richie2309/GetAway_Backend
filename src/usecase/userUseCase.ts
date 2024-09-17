@@ -78,12 +78,12 @@ export default class UserUseCase implements IUserUseCase {
                 type: 'User'
             }
             const token: string = this.jwtService.sign(payload);
-            // const refreshToken: string = this.jwtService.generateRefreshToken(payload);
+            const refreshToken: string = this.jwtService.generateRefreshToken(payload);
 
             return {
-                token: token,
-                // refreshToken: refreshToken,
-                userData: userData
+                token,
+                refreshToken,
+                userData
             }
         } catch (err: any) {
             throw err;

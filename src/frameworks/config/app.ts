@@ -7,6 +7,7 @@ import connectDB from "./db";
 import userRouter from "../router/userRoutes";
 import adminRouter from "../router/adminRoutes";
 import errorHandler from "../middleware/errorMiddlewares";
+import tokenRoutes from "../router/tokenRoutes";
 
 // Load environment variables at the very beginning
 dotenv.config();
@@ -27,6 +28,9 @@ app.use(cors({
   credentials: true,
   origin: 'http://localhost:5173'
 }));
+
+//token route
+app.use('/refresh-token', tokenRoutes)
 
 //user routes
 app.use('/api', userRouter)
