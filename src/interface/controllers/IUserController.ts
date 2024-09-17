@@ -36,6 +36,7 @@ interface IUserController {
     canUserReview(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
     addReview(req: AuthUserReq, res: Response, next: NextFunction): Promise<void>
     getTopThreeAccommodations(req: Request, res: Response, next: NextFunction): Promise<void>
+    // handleRefreshToken(req: Request, res: Response, next: NextFunction): Promise<any>
 }
 
 export interface IRegisterCredentials {

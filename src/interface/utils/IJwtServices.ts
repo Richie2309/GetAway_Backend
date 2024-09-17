@@ -6,4 +6,6 @@ export interface IPayload {
 export default interface IJwtService {
     sign(payload: IPayload): string;
     verifyToken(token: string): IPayload;
+    // generateRefreshToken(payload: IPayload): string;   
+    // verifyRefreshToken(token: string): IPayload; 
 }

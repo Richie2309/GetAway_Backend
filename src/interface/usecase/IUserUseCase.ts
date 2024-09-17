@@ -39,11 +39,13 @@ interface IUserUseCase {
     canUserReview(userId:string,accommodationId:string):Promise<boolean>
     addReview(reviewData:IReviewDocument):Promise<IReviewDocument>
     getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void>
+    // refreshAccessToken(refreshToken: string): Promise<string | never>
 }
 
 export default IUserUseCase
-
+ 
 export interface loginRes {
     token: string,
-    userData: IUserDocument
-}
+    // refreshToken:string,
+    userData: IUserDocument 
+} 

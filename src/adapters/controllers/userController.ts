@@ -70,22 +70,60 @@ class UserController implements IUserController {
             const { email, password }: ILoginCredentials = req.body;
             const response = await this.userUseCase.authenticateUser(email, password);
             const token: string = response.token
-            res.cookie('token', token, { httpOnly: true }); // Set http only cookie for token
+            // const refreshToken: string = response.refreshToken
+            const userData = response.userData
+
+            // res.cookie('refreshToken', refreshToken, {
+            //     httpOnly: true,
+            //     secure: true, // Use secure cookies in production (HTTPS)
+            //     sameSite: 'strict',
+            //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            // });
+            // // Send access token to frontend
+            // res.status(StatusCodes.Success).json({
+            //     message: 'Login successful',
+            //     token,
+            //     userData,
+            // });
+
+            res.cookie('token', token, { httpOnly: true });
             res.status(StatusCodes.Success).json({
                 message: "Successfuly login",
-                userData: response.userData
+                userData:userData
             });
         } catch (err: any) {
             next(err);
         }
     }
 
+    // async handleRefreshToken(req: Request, res: Response, next: NextFunction): Promise<any> {
+    //     try {
+    //         const { refreshToken } = req.cookies;
+    //         if (!refreshToken) {
+    //             return res.status(StatusCodes.Unauthorized).json({ message: 'No refresh token provided' });
+    //         }
+    
+    //         const newAccessToken = await this.userUseCase.refreshAccessToken(refreshToken);
+    
+    //         // Send new access token to frontend
+    //         res.status(StatusCodes.Success).json({ accessToken: newAccessToken });
+    //     } catch (err) {
+    //         next(err); // Pass the error to the global error handler
+    //     }
+    // }
+    
     async handleLogout(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
             res.cookie('token', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
             res.status(StatusCodes.Success).json({
                 message: "User Logout sucessfull"
             });
+            // res.clearCookie('refreshToken', {
+            //     httpOnly: true,
+            //     secure: true,
+            //     sameSite: 'strict',
+            // });
+            res.status(StatusCodes.Success).json({ message: 'Logout successful' });
         } catch (err: any) {
             next(err);
         }

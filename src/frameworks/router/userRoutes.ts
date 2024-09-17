@@ -126,4 +126,6 @@ userRouter.post('/addReview/:accommodationId', authenticateJwt, userController.a
 
 userRouter.get('/top-three', userController.getTopThreeAccommodations.bind(userController))
 
+// userRouter.post('/refresh-token', userController.handleRefreshToken.bind(userController));
+
 export default userRouter; 

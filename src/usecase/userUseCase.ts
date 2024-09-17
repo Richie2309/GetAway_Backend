@@ -63,7 +63,6 @@ export default class UserUseCase implements IUserUseCase {
     async authenticateUser(email: string, password: string): Promise<loginRes | never> {
         try {
             const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
-            console.log('userdata in userusecase authenticate user', userData);
 
             if (!userData) {
                 throw new authenticationError({ message: 'The provided email address is not found.', statusCode: StatusCodes.Unauthorized, errorField: 'email' });
@@ -79,9 +78,11 @@ export default class UserUseCase implements IUserUseCase {
                 type: 'User'
             }
             const token: string = this.jwtService.sign(payload);
+            // const refreshToken: string = this.jwtService.generateRefreshToken(payload);
 
             return {
                 token: token,
+                // refreshToken: refreshToken,
                 userData: userData
             }
         } catch (err: any) {
@@ -89,6 +90,16 @@ export default class UserUseCase implements IUserUseCase {
         }
     }
 
+    // async refreshAccessToken(refreshToken: string): Promise<string | never> {
+    //     try {
+    //         const decoded = this.jwtService.verifyRefreshToken(refreshToken);
+    //         const payload: IPayload = { id: decoded.id, type: 'User' };
+    //         const newAccessToken: string = this.jwtService.sign(payload);  // Generate new access token
+    //         return newAccessToken;
+    //     } catch (err) {
+    //         throw new Error('Invalid refresh token');
+    //     }
+    // }
 
     private async generateAndSendOTP(email: string): Promise<void | never> {
         try {
