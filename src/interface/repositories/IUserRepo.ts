@@ -27,7 +27,7 @@ interface IUserRepo {
      checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
      createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId: string): Promise<IBookingDocument>
      getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]>;
-     cancelBooking(bookingId: string): Promise<IBookingDocument>;
+     cancelBooking(bookingId: string, cancellationReason: string): Promise<IBookingDocument>;
      // updateBookingStatus():Promise<void>
      getSchedule(hotelId: string): Promise<IBookingDocument[]>;
      getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]>

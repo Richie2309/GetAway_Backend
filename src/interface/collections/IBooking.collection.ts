@@ -13,12 +13,13 @@ export interface IBookingDocument extends Document {
   status: 'Booked' | 'Completed' | 'Cancelled';
   bookedAt: Date;
   isCancelled: boolean;
-  refundStatus:'Not Applicable'| 'Pending'| 'Completed',
-  refundAmount:number,
+  refundStatus: 'Not Applicable' | 'Pending' | 'Completed';
+  refundAmount: number;
   cancelledAt?: Date;
+  cancellationReason: string;
 }
 
-export interface IBookingCollection extends Model<IBookingDocument> { } 
+export interface IBookingCollection extends Model<IBookingDocument> { }
 
 export interface IPaymentIntent {
   amount: number;
@@ -35,5 +36,5 @@ export interface IAccommodationWithBookingDetails {
   checkInDate: Date;
   checkOutDate: Date;
   isCancelled: boolean;
-  bookedAt: Date
+  bookedAt: Date;
 }

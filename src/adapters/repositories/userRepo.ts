@@ -315,7 +315,7 @@ export default class UserRepo implements IUserRepo {
         }
     }
 
-    async cancelBooking(bookingId: string): Promise<IBookingDocument> {
+    async cancelBooking(bookingId: string,cancellationReason: string): Promise<IBookingDocument> {
         try {
             console.log(bookingId, 'bokid in repo');
 
@@ -328,6 +328,7 @@ export default class UserRepo implements IUserRepo {
             booking.status = 'Cancelled';
             booking.isCancelled = true;
             booking.cancelledAt = new Date();
+            booking.cancellationReason = cancellationReason; 
 
             const updatedBooking = await booking.save();
             return updatedBooking;

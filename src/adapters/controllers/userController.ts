@@ -360,8 +360,10 @@ class UserController implements IUserController {
 
     async cancelBooking(req: Request, res: Response, next: NextFunction): Promise<void> {
         const { bookingId } = req.params;
+        const { cancellationReason } = req.body;
+
         try {
-            const result = await this.userUseCase.cancelBooking(bookingId);
+            const result = await this.userUseCase.cancelBooking(bookingId,cancellationReason);
             console.log('result in controller', result);
 
             res.status(StatusCodes.Success).json(result);

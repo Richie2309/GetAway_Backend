@@ -355,9 +355,9 @@ export default class UserUseCase implements IUserUseCase {
         }
     }
 
-    async cancelBooking(bookingId: string): Promise<IBookingDocument> {
+    async cancelBooking(bookingId: string,cancellationReason: string): Promise<IBookingDocument> {
         try {
-            const booking = await this.userRepo.cancelBooking(bookingId);
+            const booking = await this.userRepo.cancelBooking(bookingId,cancellationReason);
             if (!booking) {
                 console.log(`Booking not found: ${bookingId}`);
                 throw new Error('Booking not found');

@@ -1,5 +1,5 @@
 import { IUserDocument } from "../collections/IUsers.collection";
-import {  IRegisterCredentials } from "../controllers/IUserController";
+import { IRegisterCredentials } from "../controllers/IUserController";
 import { IAccommodationDocument } from "../collections/IAccommodations.collection";
 import { IAccommodationWithBookingDetails, IBookingDocument, IPaymentIntent } from "../collections/IBooking.collection";
 import Stripe from "stripe";
@@ -27,25 +27,25 @@ interface IUserUseCase {
     updateHotel(hotelData: IAccommodationDocument): Promise<void | never>;
     getAllHotels(searchQuery?: string, checkInDate?: Date, checkOutDate?: Date, guests?: number): Promise<IAccommodationDocument[]>;
     checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean>;
-    createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId:string): Promise<IBookingDocument>;
+    createBooking(accommodationId: string, userId: string, checkIn: Date, checkOut: Date, guests: number, totalPrice: number, paymentIntentId: string): Promise<IBookingDocument>;
     createPaymentIntent(amount: number): Promise<Stripe.PaymentIntent>;
     getBookedHotels(userId: string): Promise<IAccommodationWithBookingDetails[]>;
-    cancelBooking(bookingId: string): Promise<IBookingDocument>;
+    cancelBooking(bookingId: string, cancellationReason: string): Promise<IBookingDocument>;
     getSchedule(hotelId: string): Promise<IBookingDocument[]>;
     getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[] | null>
     sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument>
-    getMessagedUsers(hostId: string): Promise<IUserDocument[]|null>
-    getReviews(accommodationId: string): Promise<IReviewDocument[]|null>
-    canUserReview(userId:string,accommodationId:string):Promise<boolean>
-    addReview(reviewData:IReviewDocument):Promise<IReviewDocument>
+    getMessagedUsers(hostId: string): Promise<IUserDocument[] | null>
+    getReviews(accommodationId: string): Promise<IReviewDocument[] | null>
+    canUserReview(userId: string, accommodationId: string): Promise<boolean>
+    addReview(reviewData: IReviewDocument): Promise<IReviewDocument>
     getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void>
     // refreshAccessToken(refreshToken: string): Promise<string | never>
 }
 
 export default IUserUseCase
- 
+
 export interface loginRes {
     token: string,
-    refreshToken:string,
-    userData: IUserDocument 
+    refreshToken: string,
+    userData: IUserDocument
 } 
