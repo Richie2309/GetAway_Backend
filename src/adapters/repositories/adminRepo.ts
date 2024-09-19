@@ -70,13 +70,16 @@ export default class AdminRepo implements IAdminRepo {
   }
 
   async getSalesByDay(): Promise<{ date: string, totalSales: number }[]> {
+    const startDate = new Date(new Date().getFullYear(), 0, 1); // Beginning of the current year
+    const endDate = new Date(new Date().getFullYear() + 1, 0, 1); // Beginning of the next year
+  
     const result = await this._bookingCollection.aggregate([
       {
         $match: {
-          status: 'Completed',
+          status: { $in: ['Completed', 'Booked'] },
           bookedAt: {
-            $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-            $lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+            $gte: startDate,
+            $lt: endDate
           }
         }
       },
@@ -88,11 +91,13 @@ export default class AdminRepo implements IAdminRepo {
       },
       { $sort: { _id: 1 } }
     ]);
+  
     return result.map(item => ({
       date: item._id,
       totalSales: item.totalSales
     }));
   }
+  
 
   async getSalesByWeek(): Promise<{ week: string, totalSales: number }[]> {
     const result = await this._bookingCollection.aggregate([
@@ -113,7 +118,11 @@ export default class AdminRepo implements IAdminRepo {
 
   async getSalesByMonth(): Promise<{ month: string, totalSales: number }[]> {
     const result = await this._bookingCollection.aggregate([
-      { $match: { status: 'Completed' } },
+      {
+        $match: {
+          status: { $in: ['Completed', 'Booked'] }
+        }
+      },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m", date: "$bookedAt" } },
@@ -141,8 +150,8 @@ export default class AdminRepo implements IAdminRepo {
       { $match: { status: 'Completed' } },
       { $group: { _id: null, totalProfit: { $sum: "$totalPrice" } } }
     ]);
-      return bookings.length > 0 ? bookings[0].totalProfit : 0;
+    return bookings.length > 0 ? bookings[0].totalProfit : 0;
   }
-  
+
 
 }

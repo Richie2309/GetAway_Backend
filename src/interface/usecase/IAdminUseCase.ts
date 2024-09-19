@@ -2,7 +2,8 @@ import { IAccommodationDocument } from "../collections/IAccommodations.collectio
 import { IUserDocument } from "../collections/IUsers.collection"
 
 interface IAdminUseCase {
-    adminLogin(email: string, password: string, adminEmail: string, adminPassword: string): Promise<string>
+    adminLogin(email: string, password: string, adminEmail: string, adminPassword: string): Promise<{ accessToken: string, refreshToken: string }>
+    checkAuth(token: string): Promise<boolean>
     getUsers(): Promise<IUserDocument[]>
     toggleBlockUser(userId: string): Promise<IUserDocument>
     getHotels(): Promise<IAccommodationDocument[]>

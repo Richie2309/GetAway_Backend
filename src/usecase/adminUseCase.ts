@@ -14,14 +14,14 @@ export default class AdminUseCase implements IAdminUseCase {
     }
 
 
-    async adminLogin(email: string, password: string, adminEmail: string, adminPassword: string): Promise<string> {
+    async adminLogin(email: string, password: string, adminEmail: string, adminPassword: string): Promise<{ accessToken: string, refreshToken: string }> {
+
         try {
             if (email === adminEmail && password === adminPassword) {
-                const payload: IPayload = {
-                    id: adminEmail,
-                    type: 'Admin'
-                };
-                return this._jwtService.sign(payload);
+                const payload: IPayload = { id: adminEmail, type: 'Admin' };
+                const accessToken = this._jwtService.sign(payload);
+                const refreshToken = this._jwtService.generateRefreshToken(payload);
+                return { accessToken, refreshToken };
             } else {
                 throw new Error('Invalid credentials');
             }
@@ -29,6 +29,22 @@ export default class AdminUseCase implements IAdminUseCase {
         } catch (err) {
             throw new Error('Invalid credentials');
         }
+    }
+
+    async checkAuth(token: string): Promise<boolean> {
+        const decoded = this._jwtService.verifyToken(token)
+        console.log('decoded', decoded);
+
+        if (decoded.type !== 'Admin') {
+            return false
+        }
+        return true
+        // try {
+        //     const decodedToken = this._jwtService.verifyToken(token);
+        //     return decodedToken?.type === 'Admin'; 
+        // } catch (error) {
+        //     return false;
+        // }
     }
 
     async getUsers(): Promise<IUserDocument[]> {
@@ -99,12 +115,10 @@ export default class AdminUseCase implements IAdminUseCase {
     }
 
     async dashBoardDeatail(): Promise<{ totalUsers: number; totalAccommodations: number; totalProfit: number; }> {
-        try {            
+        try {
             const totalUsers = await this._adminRepo.getTotalUsers();
             const totalAccommodations = await this._adminRepo.getTotalAccommodations();
-            const totalProfit = await this._adminRepo.getTotalProfit();   
-            console.log(totalProfit);
-                    
+            const totalProfit = await this._adminRepo.getTotalProfit();
             return { totalUsers, totalAccommodations, totalProfit };
         } catch (err) {
             throw err

@@ -81,7 +81,7 @@ export default class UserUseCase implements IUserUseCase {
             const refreshToken: string = this.jwtService.generateRefreshToken(payload);
 
             return {
-                token,
+                token, 
                 refreshToken,
                 userData
             }

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import ITokenController from "../../interface/controllers/ItokenController";
+import ITokenController from "../../interface/controllers/ITokenController";
 import ITokenUseCase from "../../interface/usecase/ITokenUseCase";
 import { StatusCodes } from "../../enums/statusCode.enums";
 

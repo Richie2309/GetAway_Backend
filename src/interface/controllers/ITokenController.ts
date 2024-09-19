@@ -5,4 +5,4 @@ interface ITokenController {
   handleRefreshToken(req: Request, res: Response, next: NextFunction): Promise<void>
 }
 
-export default ITokenController
+export default ITokenController 

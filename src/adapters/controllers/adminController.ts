@@ -17,18 +17,78 @@ export default class AdminController implements IAdminController {
             const adminEmail: string = process.env.ADMIN_EMAIL as string
             const adminPassword: string = process.env.ADMIN_PASSWORD as string
 
-            const token = await this._adminUseCase.adminLogin(email, password, adminEmail, adminPassword)
-            res.cookie('adminToken', token, { httpOnly: true });
+            const { accessToken, refreshToken } = await this._adminUseCase.adminLogin(email, password, adminEmail, adminPassword)
+            res.cookie('token', accessToken, { httpOnly: true, maxAge: 15 * 60 * 60 });
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 60 });
             res.status(StatusCodes.Success).json({ message: 'Login successful' });
         } catch (err) {
             res.status(StatusCodes.Unauthorized).json({ message: 'Invalid credentials' });
         }
     }
 
+    async adminLogout(req: Request, res: Response): Promise<void> {
+        res.clearCookie('token', { httpOnly: true });
+        res.clearCookie('refreshToken', { httpOnly: true });
+        res.status(StatusCodes.Success).json({ message: 'Logged out successfully' });
+    }
+
+    async checkAuth(req: Request, res: Response): Promise<void> {
+        const { token } = req.cookies;
+        if (!token) {
+            res.status(StatusCodes.Unauthorized).json({ error: 'No token provided' });
+            return;
+        }
+        const isAuthenticated = await this._adminUseCase.checkAuth(token);
+        if (isAuthenticated) {
+            res.status(StatusCodes.Success).json({ message: 'Authenticated', type: 'Admin' });
+        } else {
+            res.status(StatusCodes.Unauthorized).json({ error: 'Invalid or expired token' });
+        }
+        // try {
+        //     const decoded = this.jwtService.verifyToken(token)
+
+        //     if (decoded.type !== 'Admin') {
+        //         res.clearCookie('token', { httpOnly: true });
+        //         res.clearCookie('refreshToken', { httpOnly: true })
+
+        //         res.status(StatusCodes.Unauthorized).json({ error: 'Access denied' })
+        //         return;
+        //     }
+        //     next();
+        // } catch (error) {
+        //     return res.status(StatusCodes.Unauthorized).json({ message: 'Invalid token' });
+        // }
+
+
+
+
+        // try {
+        //     const { token } = req.cookies;
+
+
+        //     console.log("reschin",token)
+
+        //     if (!token) {
+        //         res.status(StatusCodes.Unauthorized).json({ error: 'No token provided' });
+        //         return;
+        //     }
+
+        //     // Verify the JWT token via the use case
+        //     const isAuthenticated = await this._adminUseCase.checkAuth(token);
+
+        //     if (isAuthenticated) {
+        //         res.status(StatusCodes.Success).json({ message: 'Authenticated', type: 'Admin' });
+        //     } else {
+        //         res.status(StatusCodes.Unauthorized).json({ error: 'Invalid or expired token' });
+        //     }
+        // } catch (error) {
+        //     res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' });
+        // }
+    }
+
     async getUsers(req: Request, res: Response): Promise<void> {
         try {
             const users = await this._adminUseCase.getUsers();
-            console.log('users in controller.', users);
 
             res.status(StatusCodes.Success).json(users);
         } catch (err) {
@@ -56,13 +116,9 @@ export default class AdminController implements IAdminController {
     }
 
     async getHotelById(req: Request, res: Response): Promise<void> {
-        console.log('jjj');
-
         try {
             const hotelId = req.params.hotelId;
             const hotel = await this._adminUseCase.getHotelById(hotelId);
-            console.log('hotel in controler', hotel);
-
             res.status(StatusCodes.Success).json(hotel);
         } catch (err) {
             res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
@@ -97,7 +153,7 @@ export default class AdminController implements IAdminController {
         } catch (error) {
             res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
         }
-    }
+    } 
 
     async getWeeklySales(req: Request, res: Response) {
         try {
@@ -121,8 +177,8 @@ export default class AdminController implements IAdminController {
         try {
             const stats = await this._adminUseCase.dashBoardDeatail();
             res.json(stats);
-          } catch (error) {
+        } catch (error) {
             res.status(StatusCodes.Unauthorized).json({ message: 'Error fetching dashboard stats' });
-          }
+        }
     }
 }

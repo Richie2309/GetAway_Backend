@@ -2,6 +2,8 @@ import { Request, Response } from "express"
 
 interface IAdminController {
     adminLogin(req: Request, res: Response): Promise<void>
+    adminLogout(req: Request, res: Response): Promise<void>
+    checkAuth(req: Request, res: Response): Promise<void>
     getUsers(req: Request, res: Response): Promise<void>
     toggleBlockUser(req: Request, res: Response): Promise<void>
     getHotels(req: Request, res: Response): Promise<void>
