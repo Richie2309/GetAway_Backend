@@ -33,8 +33,6 @@ export default class AdminUseCase implements IAdminUseCase {
 
     async checkAuth(token: string): Promise<boolean> {
         const decoded = this._jwtService.verifyToken(token)
-        console.log('decoded', decoded);
-
         if (decoded.type !== 'Admin') {
             return false
         }

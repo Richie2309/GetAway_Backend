@@ -103,7 +103,6 @@ export default class UserRepo implements IUserRepo {
             })
             await user.save()
         } catch (err) {
-            console.log(err, 'err in user repo google');
             throw err
         }
     }
@@ -115,7 +114,6 @@ export default class UserRepo implements IUserRepo {
                 { $set: { password: newPassword } },
                 { new: true, runValidators: true }
             );
-            console.log('Password updated successfully');
             return updatedUser;
         } catch (error) {
             console.error('Error updating password in database:', error);
@@ -125,14 +123,12 @@ export default class UserRepo implements IUserRepo {
 
 
     async updateProfile(userId: string, updateData: Partial<IUserDocument>): Promise<IUserDocument | null> {
-        console.log('update data in repo', updateData, 'and id is', userId);
         try {
             const updatedUser = await this.userCollection.findByIdAndUpdate(
                 userId,
                 { $set: updateData },
                 { new: true, runValidators: true }
             );
-            console.log('Updated user:', updatedUser);
             return updatedUser;
         } catch (error) {
             console.error('Error updating user in database:', error);
@@ -147,7 +143,6 @@ export default class UserRepo implements IUserRepo {
                 { $set: { password: newPassword } },
                 { new: true, runValidators: true }
             );
-            console.log('Password updated successfully');
             return updatedUser;
         } catch (error) {
             console.error('Error updating password in database:', error);
@@ -163,7 +158,6 @@ export default class UserRepo implements IUserRepo {
                 { $set: { id_proof: images } },
                 { new: true, runValidators: true }
             )
-            console.log('Identity updated successfully');
             return updatedUser;
         } catch (error) {
             console.error('Error updating identity in database:', error);
@@ -221,7 +215,6 @@ export default class UserRepo implements IUserRepo {
 
     async updateHotel(hotelData: IAccommodationDocument): Promise<void | never> {
         try {
-            console.log('hotel data in repo', hotelData);
             const { _id, ...updateData } = hotelData
             const updatedHotel = await this._accommodationCollection.findByIdAndUpdate(
                 _id,
@@ -275,11 +268,7 @@ export default class UserRepo implements IUserRepo {
 
     async checkAvailability(accommodationId: string, checkInDate: Date, checkOutDate: Date): Promise<boolean> {
         try {
-            console.log("accomodationId  : ", accommodationId);
-            console.log("checkInDate  : ", checkInDate);
-            console.log("checkOutDate : ", checkOutDate);
-
-            const bookings = await this._bookingCollection.find({
+              const bookings = await this._bookingCollection.find({
                 accommodation: accommodationId,
                 $or: [
                     { checkInDate: { $lte: checkOutDate, $gte: checkInDate } },
@@ -287,7 +276,6 @@ export default class UserRepo implements IUserRepo {
                     { checkInDate: { $lte: checkInDate }, checkOutDate: { $gte: checkOutDate } }
                 ]
             });
-            console.log("bookings : ", bookings);
 
             return bookings.length === 0;
         } catch (err) {
@@ -317,8 +305,6 @@ export default class UserRepo implements IUserRepo {
 
     async cancelBooking(bookingId: string,cancellationReason: string): Promise<IBookingDocument> {
         try {
-            console.log(bookingId, 'bokid in repo');
-
             const booking = await this._bookingCollection.findById(bookingId);
 
             if (!booking) {
@@ -506,7 +492,7 @@ export default class UserRepo implements IUserRepo {
             const bookingStatus = await this._bookingCollection.findOne({
                 user: userId,
                 accommodation: accommodationId,
-                status: 'Completed'
+                status: { $in: ['Completed', 'Booked'] }
             })
             if (!bookingStatus) {
                 return false;
@@ -540,20 +526,20 @@ export default class UserRepo implements IUserRepo {
 
     async getTopThreeAccommodations(): Promise<IAccommodationDocument[] | void> {
         const topAccommodations = await this._bookingCollection.aggregate([
-            { $match: { status: { $in: ["Booked", "Completed"] } } }, // Filter bookings by status
-            { $group: { _id: "$accommodation", count: { $sum: 1 } } }, // Group by accommodation and count
-            { $sort: { count: -1 } }, // Sort by booking count (descending)
-            { $limit: 3 }, // Limit to top 3
+            { $match: { status: { $in: ["Booked", "Completed"] } } }, 
+            { $group: { _id: "$accommodation", count: { $sum: 1 } } }, 
+            { $sort: { count: -1 } }, 
+            { $limit: 3 }, 
             {
               $lookup: {
-                from: "accommodations", // Reference the accommodation collection
+                from: "accommodations", 
                 localField: "_id",
                 foreignField: "_id",
                 as: "accommodationDetails"
               }
             },
-            { $unwind: "$accommodationDetails" }, // Unwind the accommodation details
-            { $project: { accommodationDetails: 1 } } // Project only the accommodation details
+            { $unwind: "$accommodationDetails" }, 
+            { $project: { accommodationDetails: 1 } } 
           ]);
       
           return topAccommodations.map(item => item.accommodationDetails);  

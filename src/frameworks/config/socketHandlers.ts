@@ -46,7 +46,6 @@ export default function setupSocketHandlers(io: Server) {
 
         // Handle disconnection
         socket.on("disconnect", () => {
-          console.log("User disconnected");
           delete userSocketMap[userId];
         });
       } else {

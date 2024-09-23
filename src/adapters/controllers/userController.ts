@@ -12,7 +12,6 @@ class UserController implements IUserController {
 
     async handleRegister(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
-            console.log('handleregister', req.body);
 
             const { fullName, email, password }: IRegisterCredentials = req.body;
 
@@ -24,7 +23,6 @@ class UserController implements IUserController {
 
             res.status(StatusCodes.Success).json({ message: 'User registered, OTP sent' });
         } catch (err: any) {
-            console.log(err);
             next(err)
         }
     }
@@ -37,8 +35,6 @@ class UserController implements IUserController {
             console.log('handleotpveri in controller', otp);
 
             const token: string = await this.userUseCase.verifyOtp(emailToBeVerified, otp);
-
-            console.log('handleotpveri in controller', token);
 
             res.cookie('emailToBeVerified', '', { expires: new Date(Date.now()) }); // clearing http only cookie
             res.cookie('token', token, { httpOnly: true, expires: new Date(Date.now()) }); // clearing http only cookie
@@ -151,7 +147,6 @@ class UserController implements IUserController {
             }
             res.status(StatusCodes.Success).json({ user })
         } catch (err) {
-            console.log(err);
             res.status(StatusCodes.InternalServer).json({ error: 'Internal server error' })
         }
     }
@@ -364,7 +359,6 @@ class UserController implements IUserController {
 
         try {
             const result = await this.userUseCase.cancelBooking(bookingId,cancellationReason);
-            console.log('result in controller', result);
 
             res.status(StatusCodes.Success).json(result);
         } catch (err) {

@@ -44,7 +44,6 @@ export default class UserUseCase implements IUserUseCase {
         try {
             const user: IUserDocument | null = await this.userRepo.getDataByEmail(registerData.email);
             if (user) {
-                console.log('user already exist');
                 throw new authenticationError({ message: 'The email address you entered is already registered.', statusCode: StatusCodes.BadRequest, errorField: 'email' });
             }
 
@@ -122,7 +121,6 @@ export default class UserUseCase implements IUserUseCase {
     async verifyOtp(email: string | undefined, otp: string): Promise<string | never> {
         try {
             const otpData: IOtpDocument | null = await this.userRepo.getOtpByEmail(email);
-            console.log('verifyotp in usecase', otpData);
 
             if (!email) {
                 throw new authenticationError({ message: 'Email is not provided.', statusCode: StatusCodes.NotFound, errorField: 'email' })
@@ -184,14 +182,8 @@ export default class UserUseCase implements IUserUseCase {
     async googleAuthUser(name: string, email: string): Promise<string | null> {
         try {
             let userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
-            console.log('user usecase google auth', userData);
-
             if (!userData) {
-                console.log(name, email, 'usecase google');
-
                 await this.userRepo.saveGoogleAuth(name, email);
-                console.log('no user data in google use case');
-
             }
 
             if (userData) {
@@ -246,8 +238,6 @@ export default class UserUseCase implements IUserUseCase {
     }
 
     async updateProfile(userId: string | undefined, updateData: any): Promise<IUserDocument | null> {
-        console.log('updated data in usecase', updateData);
-
         if (!userId) throw new Error("User ID is required");
         return await this.userRepo.updateProfile(userId, updateData);
     }
@@ -309,7 +299,6 @@ export default class UserUseCase implements IUserUseCase {
             if (!hotelId) throw new Error('Hotel ID is required');
             return await this.userRepo.getHotelbyId(hotelId);
         } catch (err) {
-            console.log('Error in use case while getting hotel by ID:', err);
             throw err;
         }
     }
@@ -359,7 +348,6 @@ export default class UserUseCase implements IUserUseCase {
         try {
             const booking = await this.userRepo.cancelBooking(bookingId,cancellationReason);
             if (!booking) {
-                console.log(`Booking not found: ${bookingId}`);
                 throw new Error('Booking not found');
             }
             try {
@@ -411,8 +399,6 @@ export default class UserUseCase implements IUserUseCase {
 
     async sendMessage(senderId: string, receiverId: string, message: string, type: string): Promise<IMessageDocument> {
         try {
-            console.log(message, type);
-
             if (!senderId) throw new Error("senderId ID is required");
             if (!receiverId) throw new Error("receiverId ID is required");
 

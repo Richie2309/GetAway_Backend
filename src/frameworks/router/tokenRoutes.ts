@@ -14,4 +14,4 @@ const tokenController: ITokenController = new TokenController(tokenUseCase);
 
 tokenRoutes.post('/', tokenController.handleRefreshToken.bind(tokenController))
 
-export default tokenRoutes;  
+export default tokenRoutes;   

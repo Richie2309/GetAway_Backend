@@ -27,7 +27,6 @@ export class StripeService implements IStripeService {
       });
       return refund;
     } catch (err) {
-      console.log('Error in createRefund:', err);
       throw err;
     }
   }

@@ -64,10 +64,6 @@ export default class AdminController implements IAdminController {
 
         // try {
         //     const { token } = req.cookies;
-
-
-        //     console.log("reschin",token)
-
         //     if (!token) {
         //         res.status(StatusCodes.Unauthorized).json({ error: 'No token provided' });
         //         return;
