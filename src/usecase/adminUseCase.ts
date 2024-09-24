@@ -76,6 +76,18 @@ export default class AdminUseCase implements IAdminUseCase {
         }
     }
 
+    async getHotelDetailsById(hotelId: string): Promise<IAccommodationDocument | null> {
+        try {
+            const accommodation = await this._adminRepo.getHotelDetailsById(hotelId);
+            if (!accommodation) {
+                throw new Error('Accommodation not found');
+            }
+            return accommodation;
+        } catch (err) {
+            throw err
+        }
+    }
+
     async approveHotel(hotelId: string): Promise<void> {
         try {
             await this._adminRepo.approveHotelById(hotelId);

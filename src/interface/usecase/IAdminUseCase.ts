@@ -8,6 +8,7 @@ interface IAdminUseCase {
     toggleBlockUser(userId: string): Promise<IUserDocument>
     getHotels(): Promise<IAccommodationDocument[]>
     getHotelById(hotelId: string): Promise<IAccommodationDocument | null>;
+    getHotelDetailsById(hotelId: string): Promise<IAccommodationDocument | null>;
     approveHotel(hotelId: string): Promise<void>
     rejectHotel(hotelId: string, reason: string): Promise<void>;
     executeDaily(): Promise<{ date: string, totalSales: number }[]>;

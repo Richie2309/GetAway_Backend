@@ -6,6 +6,7 @@ interface IAdminRepo {
   toggleBlockUser(userId: string): Promise<IUserDocument>
   getAllHotels(): Promise<IAccommodationDocument[]>;
   getHotelById(hotelId: string): Promise<IAccommodationDocument | null>;
+  getHotelDetailsById(hotelId: string): Promise<IAccommodationDocument | null>;
   approveHotelById(hotelId: string): Promise<void>;
   rejectHotel(hotelId: string, reason: string): Promise<void>;
   getTotalSales(): Promise<number>;

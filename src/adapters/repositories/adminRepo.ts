@@ -50,6 +50,12 @@ export default class AdminRepo implements IAdminRepo {
       .exec();
   }
 
+  async getHotelDetailsById(hotelId: string): Promise<IAccommodationDocument | null> {
+    return this._accommodationCollection.findById(hotelId)
+    .populate('added_by', 'fullName email phone') 
+    .exec();
+  }
+
   async approveHotelById(hotelId: string): Promise<void> {
     await this._accommodationCollection.findByIdAndUpdate(hotelId, { $set: { isverified: true } });
   }
@@ -72,7 +78,7 @@ export default class AdminRepo implements IAdminRepo {
   async getSalesByDay(): Promise<{ date: string, totalSales: number }[]> {
     const startDate = new Date(new Date().getFullYear(), 0, 1); // Beginning of the current year
     const endDate = new Date(new Date().getFullYear() + 1, 0, 1); // Beginning of the next year
-  
+
     const result = await this._bookingCollection.aggregate([
       {
         $match: {
@@ -91,13 +97,13 @@ export default class AdminRepo implements IAdminRepo {
       },
       { $sort: { _id: 1 } }
     ]);
-  
+
     return result.map(item => ({
       date: item._id,
       totalSales: item.totalSales
     }));
   }
-  
+
 
   async getSalesByWeek(): Promise<{ week: string, totalSales: number }[]> {
     const result = await this._bookingCollection.aggregate([

@@ -29,6 +29,8 @@ adminRouter.get('/getHotels', authAdminJwt, adminController.getHotels.bind(admin
 
 adminRouter.get('/getHotelById/:hotelId', authAdminJwt, adminController.getHotelById.bind(adminController))
 
+adminRouter.get('/getHotelDetailsById/:hotelId', authAdminJwt, adminController.getHotelDetailsById.bind(adminController))
+
 adminRouter.post('/approve-hotel/:hotelId', authAdminJwt, adminController.approveHotel.bind(adminController));
 
 adminRouter.patch('/reject-hotel/:hotelId', authAdminJwt, adminController.rejectHotel.bind(adminController))

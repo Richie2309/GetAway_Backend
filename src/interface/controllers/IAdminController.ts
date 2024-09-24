@@ -8,6 +8,7 @@ interface IAdminController {
     toggleBlockUser(req: Request, res: Response): Promise<void>
     getHotels(req: Request, res: Response): Promise<void>
     getHotelById(req: Request, res: Response): Promise<void>;
+    getHotelDetailsById(req: Request, res: Response): Promise<void>;
     approveHotel(req: Request, res: Response): Promise<void>
     rejectHotel(req: Request, res: Response): Promise<void>
     getDailySales(req: Request, res: Response): Promise<void>;

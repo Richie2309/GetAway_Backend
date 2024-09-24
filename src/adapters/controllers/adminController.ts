@@ -121,6 +121,16 @@ export default class AdminController implements IAdminController {
         }
     }
 
+    async getHotelDetailsById(req: Request, res: Response): Promise<void> {
+        try {
+            const hotelId = req.params.hotelId;
+            const hotel=await this._adminUseCase.getHotelDetailsById(hotelId)
+            res.status(StatusCodes.Success).json(hotel);
+        } catch (err) {
+            res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
+        }
+    }
+
     async approveHotel(req: Request, res: Response): Promise<void> {
         const { hotelId } = req.params;
 
