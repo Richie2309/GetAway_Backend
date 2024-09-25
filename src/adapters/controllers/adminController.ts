@@ -144,7 +144,8 @@ export default class AdminController implements IAdminController {
 
     async rejectHotel(req: Request, res: Response): Promise<void> {
         try {
-            const { hotelId, reason } = req.body;
+            const { hotelId } = req.params;
+            const { reason } = req.body;            
             await this._adminUseCase.rejectHotel(hotelId, reason);
             res.status(StatusCodes.Success).json({ message: 'Hotel rejected successfully' });
         } catch (err) {
@@ -160,7 +161,7 @@ export default class AdminController implements IAdminController {
             res.status(StatusCodes.Unauthorized).json({ message: 'Unauthorized' });
         }
     } 
-
+ 
     async getWeeklySales(req: Request, res: Response) {
         try {
             const data = await this._adminUseCase.executeWeekly();

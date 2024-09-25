@@ -97,6 +97,7 @@ export default class AdminUseCase implements IAdminUseCase {
     }
 
     async rejectHotel(hotelId: string, reason: string): Promise<void> {
+
         await this._adminRepo.rejectHotel(hotelId, reason);
     }
 

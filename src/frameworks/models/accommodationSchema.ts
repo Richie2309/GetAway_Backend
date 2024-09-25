@@ -91,7 +91,7 @@ const accommodationSchema = new Schema({
   rejectionReason: {
     type: String,
     required: false
-  }
+  } 
 }, {
   timestamps: true
 });
