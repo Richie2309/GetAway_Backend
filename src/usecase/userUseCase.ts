@@ -62,7 +62,7 @@ export default class UserUseCase implements IUserUseCase {
     async authenticateUser(email: string, password: string): Promise<loginRes | never> {
         try {
             const userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
-
+            console.log('useee',userData);
             if (!userData) {
                 throw new authenticationError({ message: 'The provided email address is not found.', statusCode: StatusCodes.Unauthorized, errorField: 'email' });
             } else if (!await this.hashingService.compare(password, userData.password as string)) {
@@ -80,7 +80,7 @@ export default class UserUseCase implements IUserUseCase {
             const refreshToken: string = this.jwtService.generateRefreshToken(payload);
 
             return {
-                token, 
+                token,
                 refreshToken,
                 userData
             }
@@ -179,22 +179,28 @@ export default class UserUseCase implements IUserUseCase {
         return await this.userRepo.getUserInfo(userId);
     }
 
-    async googleAuthUser(name: string, email: string): Promise<string | null> {
+    async googleAuthUser(name: string, email: string): Promise<loginRes | never | null> {
         try {
             let userData: IUserDocument | null = await this.userRepo.getDataByEmail(email);
+            console.log('useee',userData);
             if (!userData) {
                 await this.userRepo.saveGoogleAuth(name, email);
             }
 
             if (userData) {
+                
                 const payload: IPayload = {
                     id: userData._id,
                     type: 'User'
                 };
 
-                const token = this.jwtService.sign(payload);
-
-                return token;
+                const token: string = this.jwtService.sign(payload);
+                const refreshToken: string = this.jwtService.generateRefreshToken(payload);
+                return {
+                    token,
+                    refreshToken,
+                    userData
+                }
             } else {
                 return null; // Return null if user data is not available
             }
@@ -344,9 +350,9 @@ export default class UserUseCase implements IUserUseCase {
         }
     }
 
-    async cancelBooking(bookingId: string,cancellationReason: string): Promise<IBookingDocument> {
+    async cancelBooking(bookingId: string, cancellationReason: string): Promise<IBookingDocument> {
         try {
-            const booking = await this.userRepo.cancelBooking(bookingId,cancellationReason);
+            const booking = await this.userRepo.cancelBooking(bookingId, cancellationReason);
             if (!booking) {
                 throw new Error('Booking not found');
             }

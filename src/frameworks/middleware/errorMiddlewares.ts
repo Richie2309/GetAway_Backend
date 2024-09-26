@@ -21,7 +21,7 @@ export default function errorHandler(err: any, req: Request, res: Response, next
         res.status(err.details.statusCode).json({ message: err.message });
     }
     else {
-        console.error(err); // Log entire error object
+        // console.error(err); // Log entire error object
         res.status(StatusCodes.InternalServer).json({ error: 'Internal Server Error.' });
     }
 }

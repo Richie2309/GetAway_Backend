@@ -13,7 +13,7 @@ interface IUserUseCase {
     resendOtp(email: string | undefined): Promise<void | never>;
     verifyToken(token: string | undefined): Promise<void | never>;
     getUserInfo(userId: string): Promise<IUserDocument | null>
-    googleAuthUser(name: string, email: string): Promise<string | null>
+    googleAuthUser(name: string, email: string): Promise<loginRes | never|null>
     checkMail(email: string): Promise<boolean>;
     verifyForgotPasswordOtp(email: string, otp: string): Promise<string>
     resetPassword(token: string, email: string | undefined, newPassword: string): Promise<IUserDocument | null>;

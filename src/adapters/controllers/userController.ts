@@ -100,16 +100,11 @@ class UserController implements IUserController {
     
     async handleLogout(req: Request, res: Response, next: NextFunction): Promise<void | never> {
         try {
-            res.cookie('token', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
-            res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) }); // clearing token stroed http only cookie to logout.
+            res.cookie('token', '', { httpOnly: true, expires: new Date(0) }); 
+            res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) }); 
             res.status(StatusCodes.Success).json({
                 message: "User Logout sucessfull"
             });
-            // res.clearCookie('refreshToken', {
-            //     httpOnly: true,
-            //     secure: true,
-            //     sameSite: 'strict',
-            // });
             res.status(StatusCodes.Success).json({ message: 'Logout successful' });
         } catch (err: any) {
             next(err);
@@ -154,13 +149,23 @@ class UserController implements IUserController {
     async googleAuth(req: Request, res: Response): Promise<void> {
         try {
             const { name, email } = req.body;
-            const token = await this.userUseCase.googleAuthUser(name, email);
-            if (token) {
-                res.cookie('token', token, { httpOnly: true })
-                res.status(StatusCodes.Success).json({ token });
-            } else {
-                res.status(StatusCodes.Unauthorized).json({ message: 'Google authentication failed' });
-            }
+            const response = await this.userUseCase.googleAuthUser(name, email);
+            const token: string = response!.token
+            const refreshToken: string = response!.refreshToken
+            const userData = response!.userData;
+            res.cookie('token', token, { httpOnly: true , maxAge: 15 * 60 * 60});
+
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 60 });
+            res.status(StatusCodes.Success).json({
+                message: "Successfuly login",
+                userData:userData
+            });
+            // if (token) {
+            //     res.cookie('token', token, { httpOnly: true })
+            //     res.status(StatusCodes.Success).json({ token });
+            // } else {
+            //     res.status(StatusCodes.Unauthorized).json({ message: 'Google authentication failed' });
+            // }
         } catch (err) {
             console.error('Error in googleAuth controller:', err);
             res.status(StatusCodes.InternalServer).json({ message: 'Internal Server Error' });
