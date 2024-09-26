@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS configuration
 app.use(cors({
   credentials: true,
-  origin: 'http://localhost:5173'
+  origin: process.env.CLIENT_URL
 }));
 
 //token route
